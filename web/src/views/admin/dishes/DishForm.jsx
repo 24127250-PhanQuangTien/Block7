@@ -23,8 +23,9 @@ export default function DishForm({ isEdit = false }) {
     available: true,
   });
 
-  // Lưu trữ số lượng của từng nguyên liệu được chọn
+  // Lưu trữ số lượng và đơn vị của từng nguyên liệu được chọn
   const [ingredientQuantities, setIngredientQuantities] = useState({});
+  const [ingredientUnits, setIngredientUnits] = useState({});
 
   const [chefs, setChefs] = useState([]);
   const [ingredients, setIngredients] = useState([]);
@@ -53,12 +54,15 @@ export default function DishForm({ isEdit = false }) {
         if (isEdit) {
           const dish = await dishApi.getById(id);
           const initialQuantities = {};
+          const initialUnits = {};
           if (dish.ingredients) {
             dish.ingredients.forEach((i) => {
-              initialQuantities[i.id] = i.quantity || 1;
+              initialQuantities[i.id] = String(i.quantity !== undefined ? i.quantity : 1);
+              initialUnits[i.id] = i.unit || "";
             });
           }
           setIngredientQuantities(initialQuantities);
+          setIngredientUnits(initialUnits);
 
           setFormData({
             name: dish.name || "",
@@ -111,8 +115,17 @@ export default function DishForm({ isEdit = false }) {
 
     setIngredientQuantities((prev) => {
       const next = { ...prev };
-      if (!next[ingId]) {
-        next[ingId] = 1;
+      if (next[ingId] === undefined) {
+        next[ingId] = "1";
+      }
+      return next;
+    });
+
+    setIngredientUnits((prev) => {
+      const next = { ...prev };
+      if (next[ingId] === undefined) {
+        const found = ingredients.find((i) => i.id === ingId);
+        next[ingId] = (found && found.unit) || "";
       }
       return next;
     });
@@ -127,10 +140,16 @@ export default function DishForm({ isEdit = false }) {
   };
 
   const handleQuantityChange = (ingId, val) => {
-    const num = Math.max(1, parseInt(val, 10) || 1);
     setIngredientQuantities((prev) => ({
       ...prev,
-      [ingId]: num,
+      [ingId]: val,
+    }));
+  };
+
+  const handleUnitChange = (ingId, val) => {
+    setIngredientUnits((prev) => ({
+      ...prev,
+      [ingId]: val,
     }));
   };
 
@@ -174,6 +193,7 @@ export default function DishForm({ isEdit = false }) {
       chefId: formData.chefId ? Number(formData.chefId) : null,
       ingredientIds: formData.ingredientIds,
       ingredientQuantities,
+      ingredientUnits,
       imageUrl: formData.imageUrl,
       description: formData.description,
       available: formData.available,
@@ -514,18 +534,34 @@ export default function DishForm({ isEdit = false }) {
                           </span>
                         </label>
 
-                        {/* Ô nhập số lượng khi đã chọn nguyên liệu */}
+                        {/* Ô nhập số lượng & đơn vị tùy chỉnh (không có mũi tên, không bị kẹt số 1) */}
                         {isChecked && (
                           <div className="ingredient-qty-box">
                             <label>Số lượng:</label>
                             <input
-                              type="number"
-                              min="1"
-                              value={ingredientQuantities[ing.id] || 1}
+                              type="text"
+                              inputMode="numeric"
+                              value={
+                                ingredientQuantities[ing.id] !== undefined
+                                  ? ingredientQuantities[ing.id]
+                                  : "1"
+                              }
                               onChange={(e) => handleQuantityChange(ing.id, e.target.value)}
                               className="ingredient-qty-input"
+                              placeholder="1"
                             />
-                            <span className="ingredient-qty-unit">{ing.unit}</span>
+                            <input
+                              type="text"
+                              value={
+                                ingredientUnits[ing.id] !== undefined
+                                  ? ingredientUnits[ing.id]
+                                  : ing.unit || ""
+                              }
+                              onChange={(e) => handleUnitChange(ing.id, e.target.value)}
+                              className="ingredient-unit-input"
+                              placeholder="Đơn vị"
+                              title="Tùy chỉnh đơn vị cho món ăn (ví dụ: gam, thìa, bó...)"
+                            />
                           </div>
                         )}
                       </div>
