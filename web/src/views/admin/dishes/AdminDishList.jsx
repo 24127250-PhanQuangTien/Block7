@@ -167,7 +167,7 @@ export default function AdminDishList() {
                 onChange={(e) => setFilterStatus(e.target.value)}
                 className="admin-filter-select"
               >
-                <option value="">Tất cả trạng thái</option>
+                <option value="">Tất cả</option>
                 <option value="available">Đang phục vụ</option>
                 <option value="unavailable">Tạm hết món</option>
               </select>
@@ -185,9 +185,9 @@ export default function AdminDishList() {
                 onChange={(e) => setFilterSort(e.target.value)}
                 className="admin-filter-select"
               >
-                <option value="">Mặc định (ID tăng dần)</option>
-                <option value="price_asc">Giá: Thấp đến Cao</option>
-                <option value="price_desc">Giá: Cao đến Thấp</option>
+                <option value="">Tất cả</option>
+                <option value="price_asc">Thấp đến Cao</option>
+                <option value="price_desc">Cao đến Thấp</option>
               </select>
             </div>
 
