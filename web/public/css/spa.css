@@ -113,13 +113,67 @@ button:disabled,
   pointer-events: none !important;
 }
 
-/* Đảm bảo dropdown chọn số lượng / filter hiển thị đẹp */
+/* ==================== BỘ LỌC, DROPDOWN & CATEGORY PILLS (BO GÓC & HOVER CAM) ==================== */
+
+/* 1. Các ô chọn Dropdown (như Sắp xếp theo giá, Trạng thái, Phân loại...) */
 .admin-filter-select,
-.admin-filter-input {
+select.form-control,
+.search-form select {
   font-family: 'Lato', sans-serif;
+  border-radius: 12px !important;
+  border: 1.5px solid #E7E5E4 !important;
+  background-color: var(--white);
+  color: var(--text-dark);
+  padding: 8px 14px !important;
+  height: 42px !important;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* Category Pills Filter Bar */
+.admin-filter-select:hover,
+select.form-control:hover,
+.search-form select:hover {
+  border-color: #F97316 !important;
+  color: #C2410C !important;
+  background-color: #FFF7ED !important;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.2) !important;
+  transform: translateY(-1px);
+}
+
+.admin-filter-select:focus,
+select.form-control:focus,
+.search-form select:focus {
+  outline: none !important;
+  border-color: #EA580C !important;
+  background-color: #FFFFFF !important;
+  box-shadow: 0 0 0 3.5px rgba(249, 115, 22, 0.25) !important;
+}
+
+/* 2. Các ô nhập tìm kiếm (Bo góc mềm mại & hover cam) */
+.admin-filter-input,
+.search-input {
+  font-family: 'Lato', sans-serif;
+  border-radius: 12px !important;
+  border: 1.5px solid #E7E5E4 !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.admin-filter-input:hover,
+.search-input:hover {
+  border-color: #FB923C !important;
+  background-color: #FFFDF9 !important;
+  box-shadow: 0 3px 10px rgba(249, 115, 22, 0.12) !important;
+}
+
+.admin-filter-input:focus,
+.search-input:focus {
+  outline: none !important;
+  border-color: #EA580C !important;
+  background-color: #FFFFFF !important;
+  box-shadow: 0 0 0 3.5px rgba(249, 115, 22, 0.25) !important;
+}
+
+/* 3. Category Pills Filter Bar */
 .category-filter-bar {
   display: flex;
   align-items: center;
@@ -138,27 +192,43 @@ button:disabled,
 }
 
 .category-pill {
-  padding: 5px 14px;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  border: 1px solid #D6D3D1;
-  background: var(--white);
-  color: var(--charcoal);
+  padding: 6px 18px !important;
+  border-radius: 24px !important;
+  font-size: 0.86rem !important;
+  font-weight: 600 !important;
+  border: 1.5px solid #E7E5E4 !important;
+  background: var(--white) !important;
+  color: var(--charcoal) !important;
   cursor: pointer;
-  transition: var(--transition);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .category-pill:hover {
-  border-color: var(--gold);
-  color: var(--gold-dark);
+  border-color: #F97316 !important;
+  color: #EA580C !important;
+  background: #FFF7ED !important;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.22) !important;
+  transform: translateY(-2px);
 }
 
 .category-pill.active {
-  background: var(--burgundy);
-  color: #fff;
-  border-color: var(--burgundy);
-  box-shadow: 0 2px 6px rgba(127, 29, 29, 0.25);
+  background: #EA580C !important;
+  color: #FFFFFF !important;
+  border-color: #EA580C !important;
+  box-shadow: 0 3px 10px rgba(234, 88, 12, 0.35) !important;
+}
+
+/* 4. Nút bấm trong bộ lọc (Lọc dữ liệu / Xóa lọc) */
+.admin-filter-btn {
+  border-radius: 12px !important;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.admin-filter-btn.btn--ghost:hover {
+  border-color: #F97316 !important;
+  color: #EA580C !important;
+  background: #FFF7ED !important;
+  box-shadow: 0 3px 8px rgba(249, 115, 22, 0.15) !important;
 }
 
 /* Thẻ chọn nguyên liệu kèm số lượng */
@@ -341,42 +411,44 @@ input::-webkit-inner-spin-button {
 .ingredient-tag-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 4px 10px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  border-radius: 20px;
-  border: 1px solid #E7E5E4;
-  background: #FFF;
-  color: var(--charcoal);
+  gap: 6px;
+  padding: 5px 14px !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  border-radius: 20px !important;
+  border: 1.5px solid #E7E5E4 !important;
+  background: #FFF !important;
+  color: var(--charcoal) !important;
   cursor: pointer;
-  transition: all 0.18s ease;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
   user-select: none;
 }
 
 .ingredient-tag-btn:hover {
-  background: #F5F5F4;
-  border-color: #D6D3D1;
-  color: var(--burgundy);
+  background: #FFF7ED !important;
+  border-color: #F97316 !important;
+  color: #EA580C !important;
+  box-shadow: 0 4px 10px rgba(249, 115, 22, 0.2) !important;
+  transform: translateY(-1px);
 }
 
 .ingredient-tag-btn.active {
-  background: var(--burgundy);
-  border-color: var(--burgundy);
-  color: #FFF;
-  box-shadow: 0 2px 4px rgba(114, 47, 55, 0.2);
+  background: #EA580C !important;
+  border-color: #EA580C !important;
+  color: #FFF !important;
+  box-shadow: 0 3px 8px rgba(234, 88, 12, 0.35) !important;
 }
 
 .ingredient-tag-btn .tag-count {
   font-size: 0.72rem;
-  padding: 1px 6px;
-  border-radius: 10px;
+  padding: 1px 7px;
+  border-radius: 12px;
   background: rgba(0, 0, 0, 0.06);
 }
 
 .ingredient-tag-btn.active .tag-count {
-  background: rgba(255, 255, 255, 0.25);
-  color: #FFF;
+  background: rgba(255, 255, 255, 0.3) !important;
+  color: #FFF !important;
 }
 
 /* Category Badge (Phân loại) */
