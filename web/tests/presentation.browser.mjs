@@ -37,6 +37,123 @@ async function screenshot(page, name)
   await page.screenshot({ type: "jpeg", quality: 85, path: new URL(name.replace(".png", ".jpg"), target).pathname.replace(/^\/(\w:)/, "$1") });
 }
 
+async function checkMobileNavigation(page, width)
+{
+  const toggle = page.locator(".navbar__toggle");
+  const panel = page.locator("#main-navigation");
+  const backdrop = page.locator(".navbar__backdrop");
+  const overflowBefore = await page.evaluate(() => document.body.style.overflow);
+
+  async function openMenu(touch = false)
+  {
+    await (touch ? toggle.tap() : toggle.click());
+    await page.waitForFunction(() =>
+    {
+      const panel = document.querySelector("#main-navigation").getBoundingClientRect();
+      return panel.right <= innerWidth + 1;
+    });
+    assert.equal(await toggle.getAttribute("aria-expanded"), "true");
+    assert.equal(await toggle.getAttribute("aria-controls"), "main-navigation");
+    assert.equal(await toggle.locator(".lucide-x").count(), 1);
+    assert.equal(await toggle.evaluate((button) =>
+    {
+      const r = button.getBoundingClientRect();
+      return button.contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2));
+    }), true, "Open panel must not intercept the toggle");
+  }
+
+  async function checkClosed()
+  {
+    await page.waitForFunction(() => document.querySelector(".navbar__toggle").getAttribute("aria-expanded") === "false");
+    assert.equal(await toggle.getAttribute("aria-expanded"), "false");
+    assert.equal(await toggle.locator(".lucide-menu").count(), 1);
+    assert.equal(await panel.isVisible(), false);
+    assert.equal(await backdrop.count(), 0);
+    assert.equal(await page.evaluate(() => document.body.style.overflow), overflowBefore);
+  }
+
+  for (const route of ["/dishes", "/admin/dishes"])
+  {
+    await page.goto(base + route);
+    const underneath = page.getByRole("link", { name: route.startsWith("/admin") ? "Thêm Món Ăn Mới" : "Khám phá thực đơn", exact: true });
+    for (const touch of [false, true])
+    {
+      await openMenu(touch);
+      await (touch ? toggle.tap() : toggle.click());
+      await checkClosed();
+      assert.equal(await toggle.evaluate((button) => button === document.activeElement), true);
+      await openMenu(touch);
+      const box = await underneath.boundingBox();
+      const url = page.url();
+      const x = box.x + 10;
+      const y = box.y + box.height / 2;
+      await (touch ? page.touchscreen.tap(x, y) : page.mouse.click(x, y));
+      await checkClosed();
+      assert.equal(page.url(), url, "Backdrop dismissal must not activate the link underneath");
+    }
+
+    await openMenu();
+    const box = await panel.boundingBox();
+    await page.mouse.click(box.x + 8, 120);
+    assert.equal(await toggle.getAttribute("aria-expanded"), "true", "Panel padding is inside, not outside");
+    await page.keyboard.press("Escape");
+    await checkClosed();
+    assert.equal(await toggle.evaluate((button) => button === document.activeElement), true);
+    await toggle.press("Shift+Tab");
+    assert.equal(await page.locator(".navbar__logo").evaluate((link) => link === document.activeElement), true, "Hidden panel links must be skipped by Tab");
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Enter");
+    assert.equal(await panel.evaluate((el) => el.contains(document.activeElement)), true);
+    assert.notEqual(await page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle), "none");
+    await page.keyboard.press("Escape");
+    await checkClosed();
+
+    await openMenu(true);
+    if (width === 440)
+    {
+      await page.screenshot({ type: "jpeg", quality: 85, path: new URL(`navigation-${route.startsWith("/admin") ? "admin" : "guest"}-440.jpg`, evidence).pathname.replace(/^\/(\w:)/, "$1") });
+    }
+    await panel.getByRole("link", { name: route.startsWith("/admin") ? "Món Ăn" : "Thực Đơn", exact: true }).tap();
+    await checkClosed();
+    await openMenu(true);
+    await panel.getByRole("link", { name: route.startsWith("/admin") ? "Đầu Bếp" : "Cổng Quản Trị", exact: true }).tap();
+    await page.waitForURL(base + (route.startsWith("/admin") ? "/admin/chefs" : "/admin/dishes"));
+    await checkClosed();
+    await openMenu();
+    await page.goBack();
+    await checkClosed();
+    await openMenu();
+    await page.setViewportSize({ width: 769, height: 956 });
+    await page.waitForFunction(() => !document.querySelector(".navbar__backdrop"));
+    assert.equal(await panel.isVisible(), true);
+    assert.equal(await toggle.isVisible(), false);
+    assert.equal(await page.evaluate(() => document.body.style.overflow), overflowBefore);
+    await page.setViewportSize({ width, height: 956 });
+    await checkClosed();
+
+    await page.setViewportSize({ width, height: 180 });
+    await openMenu(true);
+    assert.ok(await panel.evaluate((el) => el.scrollHeight > el.clientHeight));
+    await panel.getByRole("link").last().tap();
+    await checkClosed();
+    await page.setViewportSize({ width, height: 956 });
+  }
+  await page.goto(base + "/dishes");
+  await page.getByRole("link", { name: "Khám phá thực đơn", exact: true }).tap();
+  await page.waitForFunction(() => scrollY > 60);
+  await openMenu();
+  assert.equal(Math.round((await panel.boundingBox()).y), 0, "Scrolled navbar must not offset the panel");
+  await page.keyboard.press("Escape");
+  await checkClosed();
+  await page.evaluate(() => document.body.style.setProperty("overflow", "auto", "important"));
+  await openMenu();
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(() => document.body.style.overflow === "auto");
+  assert.equal(await page.evaluate(() => document.body.style.getPropertyPriority("overflow")), "important");
+  await page.evaluate(() => document.body.style.removeProperty("overflow"));
+  console.log(`Navigation toggle/outside/Escape/focus/links/history/breakpoint/short-height passed: ${width}px`);
+}
+
 try
 {
   for (const width of [1440, 375, 440])
@@ -83,6 +200,29 @@ try
       }
       await route.fulfill({ json: { ok: true, data } });
     });
+    if (process.env.NAVIGATION_ONLY === "1")
+    {
+      if (width < 768)
+      {
+        await checkMobileNavigation(page, width);
+      }
+      else
+      {
+        for (const [route, label, destination] of [["/dishes", "Cổng Quản Trị", "/admin/dishes"], ["/admin/dishes", "Đầu Bếp", "/admin/chefs"]])
+        {
+          await page.goto(base + route);
+          assert.equal(await page.locator("#main-navigation").isVisible(), true);
+          assert.equal(await page.locator(".navbar__toggle").isVisible(), false);
+          assert.equal(await page.locator(".navbar__backdrop").count(), 0);
+          await page.locator("#main-navigation").getByRole("link", { name: label, exact: true }).click();
+          await page.waitForURL(base + destination);
+        }
+        console.log("Desktop navigation passed: 1440px");
+      }
+      assert.deepEqual(errors, []);
+      await context.close();
+      continue;
+    }
     await page.goto(base + "/");
     await page.waitForURL(base + "/dishes");
     const image = page.locator(".menu-hero img");
@@ -113,6 +253,7 @@ try
 
     if (width < 768)
     {
+      await checkMobileNavigation(page, width);
       await page.getByRole("button", { name: "Mở menu điều hướng", exact: true }).tap();
       assert.equal(await page.getByRole("button", { name: "Đóng menu điều hướng", exact: true }).getAttribute("aria-expanded"), "true");
       await page.getByRole("link", { name: "Cổng Quản Trị", exact: true }).tap();

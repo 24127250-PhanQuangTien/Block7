@@ -1,5 +1,5 @@
 import { ArrowRight, Menu, X } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
 export default function Navbar() {
@@ -7,6 +7,25 @@ export default function Navbar() {
   const isAdmin = location.pathname.startsWith("/admin");
   const [isScrolled, setIsScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const toggleRef = useRef(null);
+  const panelRef = useRef(null);
+
+  function closeMenu(restoreFocus = false)
+  {
+    setMenuOpen(false);
+    if (restoreFocus)
+    {
+      toggleRef.current?.focus({ preventScroll: true });
+    }
+  }
+
+  function handleNavigationClick(event)
+  {
+    if (event.target.closest("a"))
+    {
+      closeMenu();
+    }
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -18,21 +37,86 @@ export default function Navbar() {
   }, []);
 
   // Đóng menu mobile khi chuyển route
-  useEffect(() => {
+  useEffect(() =>
+  {
     setMenuOpen(false);
-  }, [location.pathname]);
+  }, [location]);
+
+  useEffect(() =>
+  {
+    const mobile = window.matchMedia("(max-width: 768px)");
+    function handleBreakpointChange()
+    {
+      setMenuOpen(false);
+    }
+    mobile.addEventListener("change", handleBreakpointChange);
+    return () => mobile.removeEventListener("change", handleBreakpointChange);
+  }, []);
+
+  useEffect(() =>
+  {
+    if (!menuOpen)
+    {
+      return;
+    }
+    const body = document.body;
+    const overflow = body.style.getPropertyValue("overflow");
+    const priority = body.style.getPropertyPriority("overflow");
+    body.style.setProperty("overflow", "hidden");
+    panelRef.current?.querySelector("a")?.focus({ preventScroll: true });
+    function handleEscape(event)
+    {
+      if (event.key === "Escape")
+      {
+        event.preventDefault();
+        closeMenu(true);
+      }
+    }
+    document.addEventListener("keydown", handleEscape);
+    return () =>
+    {
+      document.removeEventListener("keydown", handleEscape);
+      if (overflow)
+      {
+        body.style.setProperty("overflow", overflow, priority);
+      }
+      else
+      {
+        body.style.removeProperty("overflow");
+      }
+    };
+  }, [menuOpen]);
 
   return (
-    <nav className={`navbar ${isAdmin ? "navbar--admin" : ""} ${isScrolled ? "navbar--scrolled" : ""}`}>
+    <nav
+      aria-label="Điều hướng chính"
+      className={`navbar ${isAdmin ? "navbar--admin" : ""} ${isScrolled ? "navbar--scrolled" : ""}`}
+      onBlur={(event) =>
+      {
+        if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget))
+        {
+          closeMenu();
+        }
+      }}
+    >
+      {menuOpen && (
+        <button
+          type="button"
+          className="navbar__backdrop"
+          tabIndex={-1}
+          aria-label="Đóng menu bằng vùng ngoài"
+          onClick={() => closeMenu(true)}
+        />
+      )}
       <div className="container navbar__inner">
         {isAdmin ? (
           /* ==================== PHÍA QUẢN TRỊ (ADMIN) ==================== */
           <>
-            <Link to="/admin/dishes" className="navbar__logo">
+            <Link to="/admin/dishes" className="navbar__logo" onFocus={() => closeMenu()}>
               <img src="/assets/img/logo-white.svg" alt="RESTORAN ADMIN" />
             </Link>
 
-            <div id="main-navigation" className={`navbar__menu ${menuOpen ? "open" : ""}`}>
+            <div ref={panelRef} id="main-navigation" className={`navbar__menu ${menuOpen ? "open" : ""}`} onClick={handleNavigationClick}>
               <NavLink
                 to="/admin/dishes"
                 className={({ isActive }) =>
@@ -68,11 +152,11 @@ export default function Navbar() {
         ) : (
           /* ==================== PHÍA THỰC KHÁCH (CLIENT) ==================== */
           <>
-            <Link to="/dishes" className="navbar__logo">
+            <Link to="/dishes" className="navbar__logo" onFocus={() => closeMenu()}>
               <img src="/assets/img/logo-white.svg" alt="RESTORAN" />
             </Link>
 
-            <div id="main-navigation" className={`navbar__menu ${menuOpen ? "open" : ""}`}>
+            <div ref={panelRef} id="main-navigation" className={`navbar__menu ${menuOpen ? "open" : ""}`} onClick={handleNavigationClick}>
               <NavLink
                 to="/dishes"
                 end
@@ -91,12 +175,23 @@ export default function Navbar() {
         )}
 
         <button
+          ref={toggleRef}
           type="button"
           className={`navbar__toggle ${menuOpen ? "active" : ""}`}
           aria-label={menuOpen ? "Đóng menu điều hướng" : "Mở menu điều hướng"}
           aria-expanded={menuOpen}
           aria-controls="main-navigation"
-          onClick={() => setMenuOpen(!menuOpen)}
+          onClick={() =>
+          {
+            if (menuOpen)
+            {
+              closeMenu(true);
+            }
+            else
+            {
+              setMenuOpen(true);
+            }
+          }}
         >
           {menuOpen ? <X className="ui-icon ui-icon--menu" aria-hidden="true" /> : <Menu className="ui-icon ui-icon--menu" aria-hidden="true" />}
         </button>

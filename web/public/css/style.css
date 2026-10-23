@@ -180,6 +180,11 @@ ul { list-style: none; }
   justify-content: space-between;
 }
 
+.navbar__backdrop
+{
+  display: none;
+}
+
 .navbar__logo img {
   height: 42px;
   width: auto;
@@ -1268,12 +1273,18 @@ ul { list-style: none; }
 }
 
 @media (max-width: 768px) {
-  .navbar__menu {
-    position: fixed;
+  .navbar__menu
+  {
+    position: absolute;
     top: 0;
     right: -100%;
-    width: 280px;
+    width: min(280px, calc(100vw - 48px));
     height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    visibility: hidden;
+    pointer-events: none;
     background: var(--charcoal);
     flex-direction: column;
     padding: 80px 32px 40px;
@@ -1282,14 +1293,19 @@ ul { list-style: none; }
     box-shadow: var(--shadow-lg);
   }
 
-  .navbar__menu.open {
+  .navbar__menu.open
+  {
     right: 0;
+    visibility: visible;
+    pointer-events: auto;
   }
 
-  .navbar__link {
+  .navbar__link
+  {
     padding: 14px 0;
     width: 100%;
     border-bottom: 1px solid rgba(255,251,235,0.08);
+    transition: color 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
   }
 
   .navbar__cta {
@@ -1997,9 +2013,39 @@ ul { list-style: none; }
    ============================================ */
 
 @media (max-width: 768px) {
-  /* Navbar drawer layer */
-  .navbar__menu {
-    z-index: 9999;
+  /* Layers are local to the navbar: backdrop, panel, then accessible toggle. */
+  .navbar__backdrop
+  {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    z-index: 1;
+    border: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.45);
+    touch-action: none;
+  }
+
+  .navbar__menu
+  {
+    z-index: 2;
+  }
+
+  .navbar__toggle
+  {
+    position: relative;
+    z-index: 3;
+  }
+
+  .navbar__toggle:focus-visible,
+  .navbar__menu a:focus-visible
+  {
+    outline: 2px solid var(--gold);
+    outline-offset: 4px;
   }
 
   /* Page Hero on mobile */

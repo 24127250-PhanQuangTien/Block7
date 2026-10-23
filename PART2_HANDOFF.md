@@ -121,3 +121,62 @@ git commit -m "Refresh Vietnamese menu hero and unify icons with Lucide"
 ```
 
 Staged lockfile đúng chỉ có hai phần thêm Lucide; không có năm dòng xóa peer cũ. Sau stage, `git diff -- web/package-lock.json` vẫn phải còn năm thay đổi metadata cũ. File mới cần `git add` cụ thể như mảng trên, không chỉ dùng add -p. Không dùng add . hoặc add -A.
+
+## Sửa bổ sung sau phần 2 — đóng/mở điều hướng mobile
+
+Phần 2 phía trên đã được người dùng commit/push thành `a9592cb`. Các lệnh stage phần 2 cũ là ghi chép lịch sử, không áp dụng lại cho bản sửa này. Checkout tiếp nhận trên main, không có staged changes; giữ nguyên lịch sử commit.
+
+**Nguyên nhân xác nhận:** tại 440×956, sau khi animation mở hoàn tất, `elementFromPoint` tại giữa toggle (x=394, y=42) trả về `#main-navigation`, không phải nút. Panel rộng 280px, chiếm x≈160..440, có z-index 9999; toggle là auto. Ngoài ra Navbar React chưa có backdrop/bấm ngoài, Escape hoặc xử lý liên kết cùng trang. `public/js/main.js` có logic menu cũ nhưng không được index.html/import SPA tải; danh sách script runtime xác nhận chỉ entry React/Vite, không có hai nguồn trạng thái.
+
+**Cách sửa:**
+
+- Chỉ sửa lớp trong navbar: backdrop 1, panel 2, toggle 3; không đổi z-index toàn ứng dụng. Panel/backdrop dùng absolute trong navbar fixed để không bị containing block của backdrop-filter khi navbar đã cuộn làm lệch vùng phủ.
+- Backdrop chặn click/tap xuyên xuống nội dung; toggle luôn nhận hit và đổi Menu/X đồng bộ aria-expanded. Bấm padding trong panel giữ menu mở.
+- Escape và đóng bằng toggle/backdrop trả focus về toggle. Khi mở, focus tới liên kết đầu; Tab ra ngoài đóng panel, không dùng modal/focus trap. Panel ẩn dùng visibility/pointer-events; giới hạn transition của liên kết để tránh `transition: all` giữ chúng nhận Tab tạm thời sau khi cha ẩn.
+- Chọn mọi liên kết, kể cả cùng trang, đóng menu; thay đổi location hoặc breakpoint 768px đóng/reset. Panel có overflow-y:auto và 100dvh cho màn hình thấp.
+- Khóa cuộn chỉ trong effect khi mở; cleanup khôi phục overflow inline và priority trước đó, đồng thời gỡ listener Escape. Listener breakpoint có cleanup. Không đổi hero, font, Lucide, SelectField/ChefSelect, dependency hoặc API.
+
+**Kiểm tra:**
+
+- `npm.cmd run build:web`: đạt.
+- Chế độ hồi quy nhỏ trong `presentation.browser.mjs`: đạt trên Chrome 156.0.8078.47/Windows headless, Vite local, API mock; navbar khách và quản trị ở 375×956, 440×956, desktop 1440×956, breakpoint 769px và chiều cao mobile 180px.
+- Dùng click/tap/phím thực: toggle mở/đóng lặp lại, hit-test toggle sau animation, bấm ngoài trên tọa độ liên kết phía sau nhưng URL không đổi, bấm padding panel không đóng, Escape/focus, Tab bỏ qua panel ẩn, focus outline, liên kết hiện tại/khác, browser Back, desktop→mobile, truy cập liên kết cuối trong panel cuộn và menu sau khi trang đã cuộn.
+- Xác minh overflow trở lại giá trị trước đó, gồm trường hợp `auto !important`; CTA hoạt động sau các vòng đóng/mở, không còn lớp phủ vô hình. Cleanup unmount có trong effect nhưng chưa dựng fixture riêng để kiểm tra unmount Navbar (Navbar hiện tồn tại xuyên các route).
+- Giữ nguyên các kiểm tra hero/icon/phần 2 cũ trong suite; không chạy lại toàn bộ những phần không bị ảnh hưởng. Không đổi state/gọi handler thay cho thao tác người dùng trong test.
+- Hai ảnh mở menu: `docs/part2-evidence/navigation-admin-440.jpg`, `navigation-guest-440.jpg`; nút X và vùng backdrop nhìn thấy được. Ảnh trước sửa cục bộ: `.temp/navigation-before.png`.
+- Chưa kiểm tra điện thoại hoặc Safari thật. Không ghi DB, seed/reset, stage/commit/push hoặc sửa lockfile.
+
+Chạy kiểm tra tập trung (Vite đang chạy tại localhost:5173):
+
+```powershell
+$env:PLAYWRIGHT_MODULE = (Resolve-Path .temp/browser-tools/node_modules/playwright).Path
+$env:WEB_TEST_URL = 'http://localhost:5173'
+$env:NAVIGATION_ONLY = '1'
+npm.cmd --prefix web run test:presentation
+Remove-Item Env:NAVIGATION_ONLY
+```
+
+**Commit riêng bản sửa này:** chỉ sáu file dưới đây. `api/package-lock.json`, `web/package-lock.json`, `api/api/`, `api/web/` vẫn là thay đổi có sẵn ngoài phạm vi; không stage. Không có hunk trộn ngoài phạm vi trong sáu file này.
+
+```powershell
+$navFixPaths = @(
+  'web/src/components/Navbar.jsx',
+  'web/public/css/style.css',
+  'web/tests/presentation.browser.mjs',
+  'PART2_HANDOFF.md',
+  'docs/part2-evidence/navigation-admin-440.jpg',
+  'docs/part2-evidence/navigation-guest-440.jpg'
+)
+git status --short
+git --no-pager diff --check
+git --no-pager diff -- $navFixPaths
+# Sau nghiệm thu; gồm cả hai file ảnh mới:
+git add -- $navFixPaths
+git --no-pager diff --cached --check
+git --no-pager diff --cached --stat
+git --no-pager diff --cached
+# Chỉ chạy sau khi xác nhận staged diff:
+git commit -m "Fix mobile navigation dismissal and toggle behavior"
+```
+
+Agent chỉ cung cấp lệnh để người dùng thực hiện, chưa stage/commit. Phần 3 tiếp tục viết README dựa trên phần 2 đã commit và hành vi navbar đã bổ sung; không đưa các lockfile ngoài phạm vi vào commit này.
