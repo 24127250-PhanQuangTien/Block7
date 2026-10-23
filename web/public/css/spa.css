@@ -498,4 +498,110 @@ input::-webkit-inner-spin-button {
   border: 1px solid #E5E7EB;
 }
 
+/* ==================== DANH SÁCH MÓN ĂN (HÌNH ẢNH CHIẾM PHẦN LỚN & BO GÓC VUÔNG) ==================== */
+.menu-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)) !important;
+  gap: 26px !important;
+}
+
+.menu-item {
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 0 !important;
+  border-radius: 0 !important; /* Bo góc vuông hoàn toàn */
+  background: var(--white) !important;
+  border: 1px solid #E7E5E4 !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.menu-item:hover {
+  transform: translateY(-4px) !important;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1) !important;
+  border-color: #D6D3D1 !important;
+}
+
+/* Hình ảnh chiếm phần lớn thẻ món ăn */
+.menu-item__image {
+  width: 100% !important;
+  height: 250px !important; /* Hình lớn chiếm đa số diện tích thẻ */
+  border-radius: 0 !important; /* Bo góc vuông */
+  overflow: hidden !important;
+  flex-shrink: 0 !important;
+  background: #F5F5F4 !important;
+}
+
+.menu-item__image img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 0 !important; /* Bo góc vuông */
+  transition: transform 0.4s ease !important;
+}
+
+.menu-item:hover .menu-item__image img {
+  transform: scale(1.05) !important;
+}
+
+/* Phần chữ và thông tin gọn gàng bên dưới */
+.menu-item__info {
+  padding: 16px 18px 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  flex: 1 !important;
+}
+
+.menu-item__header {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  margin-bottom: 4px !important;
+}
+
+.menu-item__name {
+  font-family: 'Cormorant Garamond', serif !important;
+  font-size: 1.35rem !important;
+  font-weight: 700 !important;
+  color: var(--charcoal) !important;
+  text-decoration: none !important;
+  line-height: 1.3 !important;
+}
+
+.menu-item__name:hover {
+  color: #EA580C !important;
+}
+
+.menu-item__dots {
+  display: none !important; /* Ẩn dấu chấm để card dọc thanh thoát */
+}
+
+.menu-item__price {
+  font-family: 'Cormorant Garamond', serif !important;
+  font-size: 1.3rem !important;
+  font-weight: 700 !important;
+  color: #EA580C !important;
+  white-space: nowrap !important;
+}
+
+.menu-item__tags {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+  margin-top: auto !important;
+  padding-top: 10px !important;
+  border-top: 1px solid #F5F5F4 !important;
+}
+
+.menu-item__tag {
+  border-radius: 0 !important; /* Bo góc vuông cho các tag */
+  font-size: 0.72rem !important;
+  padding: 4px 10px !important;
+  font-weight: 600 !important;
+}
+
+
 
