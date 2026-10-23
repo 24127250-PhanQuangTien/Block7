@@ -1,0 +1,20 @@
+{
+  "name": "restaurant-spa-web",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Restaurant Single Page Application (SPA) with React, React Router and REST API Integration",
+  "scripts": {
+    "dev": "vite --port 5173 --host",
+    "build": "vite build",
+    "preview": "vite preview --port 5173"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.27.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.3",
+    "vite": "^5.4.10"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "restaurant-block6-workspace",
+  "version": "1.0.0",
+  "description": "Restaurant Management System - REST API (Backend) & React SPA (Frontend)",
+  "scripts": {
+    "start:api": "npm --prefix api start",
+    "dev:api": "npm --prefix api run dev",
+    "test:api": "npm --prefix api test",
+    "seed:api": "npm --prefix api run seed",
+    "dev:web": "npm --prefix web run dev",
+    "build:web": "npm --prefix web run build"
+  }
+}

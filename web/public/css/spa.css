@@ -1,0 +1,399 @@
+/* ========================================================
+   SPA STYLESHEET - TIỆN ÍCH DÀNH CHO REACT SINGLE PAGE APP
+   Giữ nguyên 100% giao diện và màu sắc của style.css gốc
+   ======================================================== */
+
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1 0 auto;
+}
+
+/* Hiển thị lỗi bên dưới ô input khi xác thực thất bại */
+.field-error {
+  color: #DC2626;
+  font-size: 0.82rem;
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.form-control.is-invalid {
+  border-color: #DC2626 !important;
+  background-color: #FEF2F2 !important;
+}
+
+/* Spinner nạp dữ liệu */
+.spa-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  gap: 16px;
+  color: var(--gold-dark);
+}
+
+.spa-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(217, 119, 6, 0.15);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spa-spin 0.8s linear infinite;
+}
+
+@keyframes spa-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spa-loading-text {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* Banner thông báo lỗi */
+.spa-error-banner {
+  background: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  border-radius: var(--radius-sm);
+  padding: 24px;
+  margin: 30px auto;
+  max-width: 800px;
+  text-align: center;
+}
+
+.spa-error-title {
+  color: #991B1B;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  font-family: 'Cormorant Garamond', serif;
+}
+
+.spa-error-message {
+  color: #7F1D1D;
+  font-size: 0.95rem;
+  margin-bottom: 16px;
+}
+
+.btn--retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--burgundy);
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn--retry:hover {
+  background: var(--burgundy-dark);
+}
+
+/* Khóa nút submit khi đang gửi request */
+button:disabled,
+.btn:disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+/* Đảm bảo dropdown chọn số lượng / filter hiển thị đẹp */
+.admin-filter-select,
+.admin-filter-input {
+  font-family: 'Lato', sans-serif;
+}
+
+/* Category Pills Filter Bar */
+.category-filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0 20px;
+}
+
+.category-filter-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-dark);
+  margin-right: 6px;
+}
+
+.category-pill {
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid #D6D3D1;
+  background: var(--white);
+  color: var(--charcoal);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.category-pill:hover {
+  border-color: var(--gold);
+  color: var(--gold-dark);
+}
+
+.category-pill.active {
+  background: var(--burgundy);
+  color: #fff;
+  border-color: var(--burgundy);
+  box-shadow: 0 2px 6px rgba(127, 29, 29, 0.25);
+}
+
+/* Thẻ chọn nguyên liệu kèm số lượng */
+.ingredient-select-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--white);
+  border-radius: 6px;
+  border: 1px solid #E7E5E4;
+  transition: var(--transition);
+}
+
+.ingredient-select-card.selected {
+  border-color: var(--burgundy);
+  background: #FFFDFD;
+  box-shadow: 0 1px 4px rgba(127, 29, 29, 0.12);
+}
+
+.ingredient-select-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.ingredient-qty-box {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed #E7E5E4;
+  margin-top: 2px;
+}
+
+.ingredient-qty-box label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.ingredient-qty-input {
+  width: 70px !important;
+  height: 28px !important;
+  padding: 2px 6px !important;
+  font-size: 0.82rem !important;
+  text-align: right;
+  border: 1px solid #D6D3D1 !important;
+  border-radius: 4px !important;
+}
+
+.ingredient-qty-unit {
+  font-size: 0.78rem;
+  color: var(--charcoal);
+  font-weight: 600;
+}
+
+/* Tối ưu bảng dữ liệu món ăn: nằm gọn 1 dòng không cuộn ngang */
+.admin-table-card .data-table {
+  width: 100%;
+  table-layout: auto;
+}
+
+.admin-table-card .data-table th,
+.admin-table-card .data-table td {
+  padding: 10px 8px;
+  vertical-align: middle;
+}
+
+.admin-table-card .data-table .dish-name-cell {
+  color: var(--charcoal);
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.admin-table-card .data-table .dish-name-cell:hover {
+  color: var(--burgundy);
+}
+
+/* ==================== BỘ LỌC VÀ TÌM KIẾM NGUYÊN LIỆU ==================== */
+.ingredient-filter-box {
+  background: #FAFAF9;
+  border: 1px solid #E7E5E4;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ingredient-search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ingredient-search-icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+.ingredient-search-input {
+  width: 100% !important;
+  height: 34px !important;
+  padding: 4px 30px 4px 30px !important;
+  font-size: 0.85rem !important;
+  border: 1px solid #D6D3D1 !important;
+  border-radius: 6px !important;
+  background: #FFF !important;
+  transition: all 0.2s ease;
+}
+
+.ingredient-search-input:focus {
+  border-color: var(--burgundy) !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(114, 47, 55, 0.12);
+}
+
+.ingredient-search-clear {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 6px;
+  border-radius: 50%;
+}
+
+.ingredient-search-clear:hover {
+  color: var(--burgundy);
+}
+
+.ingredient-tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.ingredient-tag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 20px;
+  border: 1px solid #E7E5E4;
+  background: #FFF;
+  color: var(--charcoal);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  user-select: none;
+}
+
+.ingredient-tag-btn:hover {
+  background: #F5F5F4;
+  border-color: #D6D3D1;
+  color: var(--burgundy);
+}
+
+.ingredient-tag-btn.active {
+  background: var(--burgundy);
+  border-color: var(--burgundy);
+  color: #FFF;
+  box-shadow: 0 2px 4px rgba(114, 47, 55, 0.2);
+}
+
+.ingredient-tag-btn .tag-count {
+  font-size: 0.72rem;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.ingredient-tag-btn.active .tag-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #FFF;
+}
+
+/* Category Badge (Phân loại) */
+.cat-badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 12px;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.cat-badge--gia-vi {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
+}
+
+.cat-badge--rau {
+  background: #DCFCE7;
+  color: #166534;
+  border: 1px solid #BBF7D0;
+}
+
+.cat-badge--bun {
+  background: #FEF9C3;
+  color: #854D0E;
+  border: 1px solid #FEF08A;
+}
+
+.cat-badge--thit {
+  background: #FFE4E6;
+  color: #9F1239;
+  border: 1px solid #FECDD3;
+}
+
+.cat-badge--hai-san {
+  background: #E0F2FE;
+  color: #075985;
+  border: 1px solid #BAE6FD;
+}
+
+.cat-badge--khac {
+  background: #F3F4F6;
+  color: #4B5563;
+  border: 1px solid #E5E7EB;
+}
+
+
