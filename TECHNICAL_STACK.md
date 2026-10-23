@@ -1,5 +1,7 @@
 # TECHNICAL STACK & KIẾN TRÚC HỆ THỐNG
 
+> [README.md](README.md) là hướng dẫn chạy và kiểm thử chính, đã đối chiếu mã nguồn hiện tại. Tài liệu này mô tả kiến trúc; các đường dẫn máy tác giả trong ví dụ cũ không cần dùng khi clone.
+
 Dự án **Restaurant Management System** được thiết kế theo mô hình kiến trúc hiện đại tách biệt hoàn toàn giữa **Backend (REST API)** và **Frontend (React Single Page Application - SPA)**.
 
 ---
@@ -18,10 +20,10 @@ graph LR
 | **Frontend** | React | `^18.3.1` | Xây dựng giao diện người dùng theo kiến trúc component, quản lý trạng thái UI |
 | **Frontend Routing** | React Router DOM | `^6.27.0` | Quản lý định tuyến SPA phía client, HTML5 History API, không reload document |
 | **Build Tool / Bundler** | Vite | `^5.4.10` | Dev server khởi động siêu tốc (HMR), bundle tối ưu hóa dung lượng khi build production |
-| **Backend Runtime** | Node.js | `>= 20` | Môi trường thực thi JavaScript trên máy chủ |
+| **Backend Runtime** | Node.js | Không khai báo `engines` cấp dự án | Xem yêu cầu dependency và môi trường đã kiểm tra trong README |
 | **Backend Framework** | Express.js | `^4.21.1` | Xây dựng REST API web server, xử lý routing, middleware, CORS và JSON payload |
 | **Database ORM** | Prisma ORM | `^5.21.1` | Quản lý schema database, quan hệ models (1-N, N-N), query builder an toàn tránh SQL Injection |
-| **Database** | PostgreSQL | `v15+` | Hệ quản trị cơ sở dữ liệu quan hệ (được host trên đám mây Supabase) |
+| **Database** | PostgreSQL | Không ghim phiên bản trong repo | Hệ quản trị cơ sở dữ liệu quan hệ; hỗ trợ cấu hình Supabase qua DATABASE_URL |
 | **Automated Testing** | Node Test Runner & Supertest | `Node native` & `^7.0.0` | Bộ kiểm thử tự động toàn diện kiểm tra CORS, Response Shape, HTTP Status và Lỗi nghiệp vụ |
 | **Environment Config** | Dotenv | `^16.4.5` | Quản lý biến môi trường bảo mật (`.env`) |
 
@@ -170,4 +172,4 @@ model Ingredient {
 | `npm run dev:api` | Khởi chạy máy chủ Backend API tại `http://localhost:3000` (có chế độ tự động reload `node --watch`) |
 | `npm run dev:web` | Khởi chạy ứng dụng Frontend React SPA tại `http://localhost:5173` |
 | `npm run test:api` | Chạy bộ kiểm thử tự động 9 tiêu chuẩn REST API của backend |
-| `npm run seed:api` | Tự động làm sạch và nạp lại dữ liệu mẫu (Đầu bếp, Món ăn, và 60 Nguyên liệu) |
+| `npm run seed:api` | **Xóa dữ liệu cũ**, nạp lại 3 đầu bếp, 58 nguyên liệu và 7 món mẫu; xem cảnh báo trước khi chạy trong README |

@@ -1,5 +1,7 @@
 # HƯỚNG DẪN KHỞI CHẠY & NGHIỆM THU DỰ ÁN (BLOCK 6: REST API & REACT SPA)
 
+> Hướng dẫn chạy hiện tại nằm ở [README.md](README.md): cài dependency riêng, `api/.env`, Prisma/seed và kiểm thử trình duyệt. Tài liệu này giữ bối cảnh cũ; các đường dẫn máy tác giả dưới đây không phải đường dẫn cần dùng sau khi clone. Ưu tiên README khi có khác biệt.
+
 Dự án đã được chuyển đổi hoàn toàn từ phiên bản cũ (SSR) sang kiến trúc hiện đại chuẩn chỉnh theo đúng yêu cầu đề bài và 55 slide bài giảng:
 * **`api/` (Backend):** REST API xây dựng bằng Node.js + Express + Prisma ORM + Supabase PostgreSQL. Chạy tại `http://localhost:3000`.
 * **`web/` (Frontend):** Ứng dụng Single Page Application (SPA) xây dựng bằng **React 18 + React Router v6 + Vite**. Chạy tại `http://localhost:5173`.

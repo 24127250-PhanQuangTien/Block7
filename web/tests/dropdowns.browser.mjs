@@ -19,6 +19,15 @@ const dishes = [
   { id: 4, name: "Món D", price: 70000, available: false },
 ].map((dish) => ({ ...dish, category: "Món Nước", ingredients: [] }));
 
+async function waitForDishNames(page, names)
+{
+  await page.waitForFunction((expected) =>
+  {
+    const actual = [...document.querySelectorAll(".dish-name-cell")].map((el) => el.textContent);
+    return JSON.stringify(actual) === JSON.stringify(expected);
+  }, names);
+}
+
 async function checkOpen(page, file)
 {
   const popup = page.getByRole("listbox");
@@ -128,6 +137,7 @@ try
     await page.waitForURL(/status=unavailable.*sort=price_desc/);
     await page.locator(".spa-loading").waitFor({ state: "hidden" });
     assert.ok(requests.some((url) => url.searchParams.get("status") === "unavailable" && url.searchParams.get("sort") === "price_desc"));
+    await waitForDishNames(page, ["Món D", "Món B"]);
     assert.deepEqual(await page.locator(".dish-name-cell").allTextContents(), ["Món D", "Món B"]);
     await page.reload();
     assert.match(await status.innerText(), /Tạm hết món/);
@@ -162,6 +172,7 @@ try
       await page.getByRole("button", { name: "Lọc Dữ Liệu", exact: true }).tap();
       await page.waitForURL(/status=available.*sort=price_asc/);
       await page.locator(".spa-loading").waitFor({ state: "hidden" });
+      await waitForDishNames(page, ["Món A", "Món C"]);
       assert.deepEqual(await page.locator(".dish-name-cell").allTextContents(), ["Món A", "Món C"]);
     }
 
