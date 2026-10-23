@@ -7,7 +7,7 @@ const ingredientsRouter = require("./routes/ingredients");
 
 const app = express();
 
-// 1. Cấu hình CORS chặt chẽ theo tiêu chuẩn bài học (Slide 26, 45, 51)
+// 1. Cấu hình CORS chặt chẽ theo tiêu chuẩn bài học
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:5173";
 
 app.use((req, res, next) => {
