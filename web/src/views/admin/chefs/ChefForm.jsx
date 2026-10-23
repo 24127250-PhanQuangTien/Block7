@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { CircleAlert, Save, X } from "lucide-react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { chefApi } from "../../../apiClient";
 import { LoadingSpinner, NotFoundCard } from "../../../components/StateViews";
@@ -99,7 +100,7 @@ export default function ChefForm({ isEdit = false }) {
             title="Không Tìm Thấy Đầu Bếp"
             message="Thông tin đầu bếp này không tồn tại trong danh sách."
             backUrl="/admin/chefs"
-            backText="← Về Danh Sách Đầu Bếp"
+            backText="Về Danh Sách Đầu Bếp"
           />
         </div>
       </section>
@@ -135,7 +136,7 @@ export default function ChefForm({ isEdit = false }) {
               }}
             >
               <div className="alert-content">
-                <strong>Lỗi xác thực dữ liệu:</strong>
+                <strong><CircleAlert className="ui-icon" aria-hidden="true" /> Lỗi xác thực dữ liệu:</strong>
                 <p style={{ margin: "4px 0 0" }}>{generalError}</p>
               </div>
             </div>
@@ -190,10 +191,10 @@ export default function ChefForm({ isEdit = false }) {
                 disabled={submitting}
                 className="btn btn--primary"
               >
-                {submitting ? "Đang Lưu..." : "Lưu Đầu Bếp"}
+                <Save className="ui-icon" aria-hidden="true" /> {submitting ? "Đang Lưu..." : "Lưu Đầu Bếp"}
               </button>
               <Link to="/admin/chefs" className="btn btn--ghost">
-                Hủy Bỏ
+                <X className="ui-icon" aria-hidden="true" /> Hủy Bỏ
               </Link>
             </div>
           </form>

@@ -1,3 +1,4 @@
+import { Check, CircleAlert, RotateCcw, Save, Search, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { dishApi, chefApi, ingredientApi } from "../../../apiClient";
@@ -266,7 +267,7 @@ export default function DishForm({ isEdit = false }) {
             title="Không Tìm Thấy Món Ăn"
             message="Món ăn này không tồn tại hoặc đã bị gỡ khỏi thực đơn."
             backUrl="/admin/dishes"
-            backText="← Về Danh Sách Món Ăn"
+            backText="Về Danh Sách Món Ăn"
           />
         </div>
       </section>
@@ -302,7 +303,7 @@ export default function DishForm({ isEdit = false }) {
               }}
             >
               <div className="alert-content">
-                <strong>Lỗi xác thực dữ liệu:</strong>
+                <strong><CircleAlert className="ui-icon" aria-hidden="true" /> Lỗi xác thực dữ liệu:</strong>
                 <p style={{ margin: "4px 0 0" }}>{generalError}</p>
               </div>
             </div>
@@ -445,7 +446,7 @@ export default function DishForm({ isEdit = false }) {
               {/* Thanh tìm kiếm nhỏ và các tag lọc (gia vị, rau, bún, thịt,...) */}
               <div className="ingredient-filter-box">
                 <div className="ingredient-search-wrapper">
-                  <span className="ingredient-search-icon">🔍</span>
+                  <span className="ingredient-search-icon" aria-hidden="true"><Search className="ui-icon" aria-hidden="true" /></span>
                   <input
                     type="text"
                     value={ingSearch}
@@ -460,8 +461,9 @@ export default function DishForm({ isEdit = false }) {
                       className="ingredient-search-clear"
                       onClick={() => setIngSearch("")}
                       title="Xóa tìm kiếm"
+                      aria-label="Xóa tìm kiếm nguyên liệu"
                     >
-                      ✕
+                      <X className="ui-icon" aria-hidden="true" />
                     </button>
                   )}
                 </div>
@@ -497,7 +499,7 @@ export default function DishForm({ isEdit = false }) {
                           selectedIngTag === "Đã chọn" ? "var(--burgundy)" : "#FEF2F2",
                       }}
                     >
-                      <span>✓ Đã chọn</span>
+                      <Check className="ui-icon" aria-hidden="true" /><span>Đã chọn</span>
                       <span className="tag-count">{formData.ingredientIds.length}</span>
                     </button>
                   )}
@@ -619,7 +621,7 @@ export default function DishForm({ isEdit = false }) {
                           fontWeight: "600",
                         }}
                       >
-                        ✕ Đặt lại tìm kiếm & tag
+                        <RotateCcw className="ui-icon" aria-hidden="true" /> Đặt lại tìm kiếm & tag
                       </button>
                     )}
                   </div>
@@ -700,10 +702,10 @@ export default function DishForm({ isEdit = false }) {
                 disabled={submitting}
                 className="btn btn--primary"
               >
-                {submitting ? "Đang Lưu..." : isEdit ? "Lưu Thay Đổi" : "Lưu Món Ăn"}
+                <Save className="ui-icon" aria-hidden="true" /> {submitting ? "Đang Lưu..." : isEdit ? "Lưu Thay Đổi" : "Lưu Món Ăn"}
               </button>
               <Link to="/admin/dishes" className="btn btn--ghost">
-                Hủy Bỏ
+                <X className="ui-icon" aria-hidden="true" /> Hủy Bỏ
               </Link>
             </div>
           </form>

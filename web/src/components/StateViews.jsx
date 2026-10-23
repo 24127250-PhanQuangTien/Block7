@@ -1,11 +1,12 @@
 import React from "react";
+import { ArrowLeft, CircleAlert, LoaderCircle, RotateCcw } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // 1. Trạng thái Đang tải (loading) - Màn hình xoay trang nhã, không thông báo kỹ thuật backend
 export function LoadingSpinner({ message = "" }) {
   return (
-    <div className="spa-loading" style={{ padding: "60px 20px" }}>
-      <div className="spa-spinner"></div>
+    <div className="spa-loading" role="status" aria-label="Đang tải dữ liệu" style={{ padding: "60px 20px" }}>
+      <LoaderCircle className="ui-icon ui-icon--spinner" aria-hidden="true" />
       {message ? <p className="spa-loading-text">{message}</p> : null}
     </div>
   );
@@ -20,11 +21,11 @@ export function ErrorAlert({ error, onRetry }) {
 
   return (
     <div className="spa-error-banner">
-      <h3 className="spa-error-title">Không thể tải dữ liệu</h3>
+      <h3 className="spa-error-title"><CircleAlert className="ui-icon" aria-hidden="true" /> Không thể tải dữ liệu</h3>
       <p className="spa-error-message">{message}</p>
       {onRetry && (
-        <button onClick={onRetry} className="btn--retry">
-          Thử Lại
+        <button type="button" onClick={onRetry} className="btn--retry">
+          <RotateCcw className="ui-icon" aria-hidden="true" /> Thử Lại
         </button>
       )}
     </div>
@@ -37,7 +38,7 @@ export function NotFoundCard({
   title = "Không Tìm Thấy Thông Tin",
   message = "Trang hoặc món ăn bạn đang tìm kiếm không tồn tại hoặc đã ngừng phục vụ.",
   backUrl = "/dishes",
-  backText = "← Về Thực Đơn Nhà Hàng",
+  backText = "Về Thực Đơn Nhà Hàng",
 }) {
   return (
     <div className="error-card" style={{ margin: "40px auto" }}>
@@ -46,6 +47,7 @@ export function NotFoundCard({
       <p className="error-desc">{message}</p>
       <div className="error-actions">
         <Link to={backUrl} className="btn btn--primary">
+          <ArrowLeft className="ui-icon" aria-hidden="true" />
           {backText}
         </Link>
         <Link to="/admin/dishes" className="btn btn--ghost">

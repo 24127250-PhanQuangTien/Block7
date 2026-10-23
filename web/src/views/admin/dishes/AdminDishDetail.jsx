@@ -1,3 +1,4 @@
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { dishApi } from "../../../apiClient";
@@ -50,7 +51,7 @@ export default function AdminDishDetail() {
             title="Không Tìm Thấy Món Ăn"
             message="Món ăn này không tồn tại hoặc đã bị gỡ khỏi thực đơn."
             backUrl="/admin/dishes"
-            backText="← Về Danh Sách Món Ăn"
+            backText="Về Danh Sách Món Ăn"
           />
         </div>
       </section>
@@ -243,17 +244,17 @@ export default function AdminDishDetail() {
                   }}
                 >
                   <Link to="/admin/dishes" className="btn btn--primary">
-                    ← Về Danh Sách Quản Trị
+                    <ArrowLeft className="ui-icon" aria-hidden="true" /> Về Danh Sách Quản Trị
                   </Link>
                   <Link
                     to={`/admin/dishes/${dish.id}/edit`}
                     className="btn btn--outline"
                     style={{ color: "var(--charcoal)" }}
                   >
-                    Sửa Món Ăn
+                    <Pencil className="ui-icon" aria-hidden="true" /> Sửa Món Ăn
                   </Link>
                   <Link to={`/admin/dishes/${dish.id}/delete`} className="btn btn--ghost">
-                    Xóa Món Ăn
+                    <Trash2 className="ui-icon" aria-hidden="true" /> Xóa Món Ăn
                   </Link>
                 </div>
               </div>

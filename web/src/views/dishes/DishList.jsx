@@ -1,3 +1,4 @@
+import { ArrowDown, ArrowRight, Search, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { dishApi } from "../../apiClient";
@@ -74,21 +75,24 @@ export default function DishList() {
   return (
     <>
       {/* Page Hero Section */}
-      <section className="page-hero">
-        <div className="page-hero__bg">
-          <img src="/assets/img/menu-bg.svg" alt="Thực Đơn RESTORAN" />
-        </div>
+      <section className="page-hero menu-hero" aria-labelledby="menu-hero-title">
+        <picture className="page-hero__bg" aria-hidden="true">
+          <source media="(max-width: 600px)" srcSet="/assets/img/menu-hero-800.webp" />
+          <img src="/assets/img/menu-hero-1600.webp" width="1600" height="666" alt="" fetchpriority="high" decoding="async" />
+        </picture>
         <div className="page-hero__overlay"></div>
         <div className="container page-hero__content">
-          <h1 className="page-hero__title">Thực Đơn Nhà Hàng</h1>
-          <p className="page-hero__breadcrumb">
-            <Link to="/dishes">Trang Chủ</Link> &nbsp;/&nbsp; Thực Đơn
+          <p className="menu-hero__eyebrow">Thực đơn RESTORAN</p>
+          <h1 id="menu-hero-title" className="page-hero__title">Hương vị Việt,<br />trọn vẹn từng món</h1>
+          <p className="menu-hero__description">
+            Khám phá những món Việt quen thuộc, từ tô phở nóng đến gỏi cuốn thanh mát.
           </p>
+          <a className="btn btn--primary" href="#thuc-don">Khám phá thực đơn <ArrowDown className="ui-icon" aria-hidden="true" /></a>
         </div>
       </section>
 
       {/* Menu Section */}
-      <section className="section">
+      <section id="thuc-don" className="section menu-section">
         <div className="container">
           <div className="section-header">
             <span className="section-header__label">Tuyển Chọn Tinh Hoa</span>
@@ -130,6 +134,7 @@ export default function DishList() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Tìm món ăn theo tên (Ví dụ: Phở, Bún chả...)"
+                  aria-label="Tìm món ăn"
                   className="search-input"
                 />
                 {qParam && (
@@ -138,14 +143,15 @@ export default function DishList() {
                     onClick={handleClearSearch}
                     className="btn-clear"
                     title="Xóa bộ lọc"
+                    aria-label="Xóa tìm kiếm món ăn"
                     style={{ background: "none", border: "none", cursor: "pointer" }}
                   >
-                    ✕
+                    <X className="ui-icon" aria-hidden="true" />
                   </button>
                 )}
               </div>
               <button type="submit" className="btn btn--primary">
-                Tìm Kiếm
+                <Search className="ui-icon" aria-hidden="true" /> Tìm Kiếm
               </button>
             </form>
             {qParam && (
@@ -243,7 +249,7 @@ export default function DishList() {
                           to={`/dishes/${dish.id}`}
                           className="menu-item__tag menu-item__tag--unit"
                         >
-                          Xem Chi Tiết →
+                          Xem Chi Tiết <ArrowRight className="ui-icon" aria-hidden="true" />
                         </Link>
                       </div>
                     </div>

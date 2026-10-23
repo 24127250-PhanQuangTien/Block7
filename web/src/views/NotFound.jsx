@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import React from "react";
 import { Link } from "react-router-dom";
 
@@ -29,7 +30,7 @@ export default function NotFound() {
             </p>
             <div className="error-actions">
               <Link to="/dishes" className="btn btn--primary">
-                ← Về Thực Đơn Nhà Hàng
+                <ArrowLeft className="ui-icon" aria-hidden="true" /> Về Thực Đơn Nhà Hàng
               </Link>
               <Link to="/admin/dishes" className="btn btn--ghost">
                 Về Cổng Quản Trị

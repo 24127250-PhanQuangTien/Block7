@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { CircleAlert, Save, X } from "lucide-react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ingredientApi } from "../../../apiClient";
 import { LoadingSpinner, NotFoundCard } from "../../../components/StateViews";
@@ -120,7 +121,7 @@ export default function IngredientForm({ isEdit = false }) {
             title="Không Tìm Thấy Nguyên Liệu"
             message="Thông tin nguyên liệu này không tồn tại trong danh mục."
             backUrl="/admin/ingredients"
-            backText="← Về Danh Sách Nguyên Liệu"
+            backText="Về Danh Sách Nguyên Liệu"
           />
         </div>
       </section>
@@ -156,7 +157,7 @@ export default function IngredientForm({ isEdit = false }) {
               }}
             >
               <div className="alert-content">
-                <strong>Lỗi xác thực dữ liệu:</strong>
+                <strong><CircleAlert className="ui-icon" aria-hidden="true" /> Lỗi xác thực dữ liệu:</strong>
                 <p style={{ margin: "4px 0 0" }}>{generalError}</p>
               </div>
             </div>
@@ -256,10 +257,10 @@ export default function IngredientForm({ isEdit = false }) {
                 disabled={submitting}
                 className="btn btn--primary"
               >
-                {submitting ? "Đang Lưu..." : "Lưu Nguyên Liệu"}
+                <Save className="ui-icon" aria-hidden="true" /> {submitting ? "Đang Lưu..." : "Lưu Nguyên Liệu"}
               </button>
               <Link to="/admin/ingredients" className="btn btn--ghost">
-                Hủy Bỏ
+                <X className="ui-icon" aria-hidden="true" /> Hủy Bỏ
               </Link>
             </div>
           </form>

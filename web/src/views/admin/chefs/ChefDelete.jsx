@@ -1,3 +1,4 @@
+import { ArrowLeft, Trash2, TriangleAlert } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { chefApi } from "../../../apiClient";
@@ -65,7 +66,7 @@ export default function ChefDelete() {
             title="Không Tìm Thấy Đầu Bếp"
             message="Thông tin đầu bếp này không tồn tại trong danh sách."
             backUrl="/admin/chefs"
-            backText="← Về Danh Sách Đầu Bếp"
+            backText="Về Danh Sách Đầu Bếp"
           />
         </div>
       </section>
@@ -107,7 +108,7 @@ export default function ChefDelete() {
           </div>
 
           <div className="confirm-warning-note">
-            Lưu ý: Thông tin đầu bếp sau khi xóa sẽ không thể khôi phục lại.
+            <TriangleAlert className="ui-icon" aria-hidden="true" /> Lưu ý: Thông tin đầu bếp sau khi xóa sẽ không thể khôi phục lại.
           </div>
 
           <div className="confirm-actions">
@@ -118,14 +119,14 @@ export default function ChefDelete() {
               className="btn btn--primary"
               style={{ background: "var(--burgundy)", color: "#fff", width: "100%" }}
             >
-              {submitting ? "Đang Xóa..." : "Xác Nhận Xóa"}
+              <Trash2 className="ui-icon" aria-hidden="true" /> {submitting ? "Đang Xóa..." : "Xác Nhận Xóa"}
             </button>
             <Link
               to="/admin/chefs"
               className="btn btn--ghost"
               style={{ width: "100%", textAlign: "center" }}
             >
-              Hủy Bỏ và Quay Lại
+              <ArrowLeft className="ui-icon" aria-hidden="true" /> Hủy Bỏ và Quay Lại
             </Link>
           </div>
         </div>

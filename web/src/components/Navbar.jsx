@@ -1,3 +1,4 @@
+import { ArrowRight, Menu, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 
@@ -31,7 +32,7 @@ export default function Navbar() {
               <img src="/assets/img/logo-white.svg" alt="RESTORAN ADMIN" />
             </Link>
 
-            <div className={`navbar__menu ${menuOpen ? "open" : ""}`}>
+            <div id="main-navigation" className={`navbar__menu ${menuOpen ? "open" : ""}`}>
               <NavLink
                 to="/admin/dishes"
                 className={({ isActive }) =>
@@ -60,7 +61,7 @@ export default function Navbar() {
               </NavLink>
 
               <Link to="/dishes" className="navbar__link navbar__link--client">
-                Xem Trang Khách →
+                Xem Trang Khách <ArrowRight className="ui-icon" aria-hidden="true" />
               </Link>
             </div>
           </>
@@ -71,7 +72,7 @@ export default function Navbar() {
               <img src="/assets/img/logo-white.svg" alt="RESTORAN" />
             </Link>
 
-            <div className={`navbar__menu ${menuOpen ? "open" : ""}`}>
+            <div id="main-navigation" className={`navbar__menu ${menuOpen ? "open" : ""}`}>
               <NavLink
                 to="/dishes"
                 end
@@ -90,13 +91,14 @@ export default function Navbar() {
         )}
 
         <button
+          type="button"
           className={`navbar__toggle ${menuOpen ? "active" : ""}`}
-          aria-label="Toggle menu"
+          aria-label={menuOpen ? "Đóng menu điều hướng" : "Mở menu điều hướng"}
+          aria-expanded={menuOpen}
+          aria-controls="main-navigation"
           onClick={() => setMenuOpen(!menuOpen)}
         >
-          <span></span>
-          <span></span>
-          <span></span>
+          {menuOpen ? <X className="ui-icon ui-icon--menu" aria-hidden="true" /> : <Menu className="ui-icon ui-icon--menu" aria-hidden="true" />}
         </button>
       </div>
     </nav>

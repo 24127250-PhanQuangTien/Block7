@@ -1,3 +1,4 @@
+import { ArrowLeft, Pencil, Trash2, TriangleAlert } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ingredientApi } from "../../../apiClient";
@@ -65,7 +66,7 @@ export default function IngredientDelete() {
             title="Không Tìm Thấy Nguyên Liệu"
             message="Thông tin nguyên liệu này không tồn tại trong danh mục."
             backUrl="/admin/ingredients"
-            backText="← Về Danh Sách Nguyên Liệu"
+            backText="Về Danh Sách Nguyên Liệu"
           />
         </div>
       </section>
@@ -225,7 +226,7 @@ export default function IngredientDelete() {
                           className="btn-xs btn-xs-edit"
                           style={{ flexShrink: 0 }}
                         >
-                          Sửa Món ↗
+                          <Pencil className="ui-icon" aria-hidden="true" /> Sửa Món
                         </Link>
                       </div>
                     );
@@ -239,14 +240,14 @@ export default function IngredientDelete() {
                   className="btn btn--primary"
                   style={{ width: "100%", textAlign: "center" }}
                 >
-                  ← Quay Lại Kho Nguyên Liệu
+                  <ArrowLeft className="ui-icon" aria-hidden="true" /> Quay Lại Kho Nguyên Liệu
                 </Link>
               </div>
             </>
           ) : (
             <>
               <div className="confirm-warning-note">
-                Lưu ý: Nguyên liệu sau khi xóa sẽ không thể khôi phục lại.
+                <TriangleAlert className="ui-icon" aria-hidden="true" /> Lưu ý: Nguyên liệu sau khi xóa sẽ không thể khôi phục lại.
               </div>
 
               <div className="confirm-actions">
@@ -261,14 +262,14 @@ export default function IngredientDelete() {
                     width: "100%",
                   }}
                 >
-                  {submitting ? "Đang Xóa..." : "Xác Nhận Xóa"}
+                  <Trash2 className="ui-icon" aria-hidden="true" /> {submitting ? "Đang Xóa..." : "Xác Nhận Xóa"}
                 </button>
                 <Link
                   to="/admin/ingredients"
                   className="btn btn--ghost"
                   style={{ width: "100%", textAlign: "center" }}
                 >
-                  Hủy Bỏ và Quay Lại
+                  <ArrowLeft className="ui-icon" aria-hidden="true" /> Hủy Bỏ và Quay Lại
                 </Link>
               </div>
             </>

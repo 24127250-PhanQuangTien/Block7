@@ -146,6 +146,7 @@ try
     await page.getByRole("button", { name: "Xóa Lọc", exact: true }).click();
     await page.waitForURL(`${base}/admin/dishes`);
     await page.locator(".spa-loading").waitFor({ state: "hidden" });
+    await page.waitForFunction(() => document.querySelectorAll(".dish-name-cell").length === 4);
     assert.equal(await page.locator(".dish-name-cell").count(), 4);
     assert.match(await status.innerText(), /Tất cả/);
     assert.match(await sort.innerText(), /Tất cả/);

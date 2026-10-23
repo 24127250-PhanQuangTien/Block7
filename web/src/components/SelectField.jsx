@@ -1,4 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 import { createPortal } from "react-dom";
 import { normalizeSearch } from "../utils/search";
 import { getSelectPosition } from "../utils/selectPosition";
@@ -194,7 +195,7 @@ export default function SelectField({ id, name, value, options, onChange, classN
         onKeyDown={handleKeyDown}
       >
         <span>{options[selectedIndex]?.label || "Chọn…"}</span>
-        <span className="select-control-arrow" aria-hidden="true">⌄</span>
+        <span className="select-control-arrow" aria-hidden="true"><ChevronDown className="ui-icon" aria-hidden="true" /></span>
       </button>
       {open && createPortal(
         <div

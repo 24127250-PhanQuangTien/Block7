@@ -1,4 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from "react";
+import { Check, RotateCcw } from "lucide-react";
 import { filterChefs } from "../utils/search";
 
 export default function ChefSelect({ value, chefs, loading, error, onRetry, onChange, invalid, describedBy })
@@ -164,7 +165,7 @@ export default function ChefSelect({ value, chefs, loading, error, onRetry, onCh
       {error && (
         <div className="chef-select-status" role="alert">
           Không thể tải danh sách đầu bếp. Lựa chọn hiện tại được giữ lại.
-          <button type="button" className="btn--retry" onClick={onRetry} disabled={loading}>Thử lại</button>
+          <button type="button" className="btn--retry" onClick={onRetry} disabled={loading}><RotateCcw className="ui-icon" aria-hidden="true" /> Thử lại</button>
         </div>
       )}
       {open && (
@@ -185,7 +186,7 @@ export default function ChefSelect({ value, chefs, loading, error, onRetry, onCh
                   onMouseDown={(event) => event.preventDefault()}
                   onClick={() => choose(chef)}
                 >
-                  <strong>{chef.name}{String(chef.id) === String(value) ? " ✓" : ""}</strong>
+                  <strong>{chef.name}{String(chef.id) === String(value) && <Check className="ui-icon selection-check" aria-hidden="true" />}</strong>
                   <span>{chef.specialty || "Đầu bếp"}</span>
                 </button>
               </li>

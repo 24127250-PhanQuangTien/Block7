@@ -1,3 +1,4 @@
+import { Eye, ListFilter, Pencil, Plus, Trash2, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { dishApi } from "../../../apiClient";
@@ -110,7 +111,7 @@ export default function AdminDishList() {
           </div>
           <div>
             <Link to="/admin/dishes/new" className="btn btn--primary">
-              + Thêm Món Ăn Mới
+              <Plus className="ui-icon" aria-hidden="true" /> Thêm Món Ăn Mới
             </Link>
           </div>
         </div>
@@ -199,7 +200,7 @@ export default function AdminDishList() {
             {/* Nút Thực thi & Xóa lọc */}
             <div className="admin-filter-buttons">
               <button type="submit" className="admin-filter-btn btn--primary">
-                Lọc Dữ Liệu
+                <ListFilter className="ui-icon" aria-hidden="true" /> Lọc Dữ Liệu
               </button>
               {hasFilter && (
                 <button
@@ -208,7 +209,7 @@ export default function AdminDishList() {
                   className="admin-filter-btn btn--ghost"
                   title="Xóa tất cả điều kiện lọc"
                 >
-                  Xóa Lọc
+                  <X className="ui-icon" aria-hidden="true" /> Xóa Lọc
                 </button>
               )}
             </div>
@@ -363,19 +364,19 @@ export default function AdminDishList() {
                             to={`/admin/dishes/${dish.id}`}
                             className="btn-xs btn-xs-view"
                           >
-                            Xem
+                            <Eye className="ui-icon" aria-hidden="true" /> Xem
                           </Link>
                           <Link
                             to={`/admin/dishes/${dish.id}/edit`}
                             className="btn-xs btn-xs-edit"
                           >
-                            Sửa
+                            <Pencil className="ui-icon" aria-hidden="true" /> Sửa
                           </Link>
                           <Link
                             to={`/admin/dishes/${dish.id}/delete`}
                             className="btn-xs btn-xs-delete"
                           >
-                            Xóa
+                            <Trash2 className="ui-icon" aria-hidden="true" /> Xóa
                           </Link>
                         </td>
                       </tr>

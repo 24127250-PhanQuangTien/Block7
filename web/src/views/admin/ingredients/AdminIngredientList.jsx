@@ -1,3 +1,4 @@
+import { Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ingredientApi } from "../../../apiClient";
@@ -86,7 +87,7 @@ export default function AdminIngredientList() {
           </div>
           <div>
             <Link to="/admin/ingredients/new" className="btn btn--primary">
-              + Thêm Nguyên Liệu
+              <Plus className="ui-icon" aria-hidden="true" /> Thêm Nguyên Liệu
             </Link>
           </div>
         </div>
@@ -110,7 +111,7 @@ export default function AdminIngredientList() {
             </div>
             <div className="admin-filter-buttons">
               <button type="submit" className="admin-filter-btn btn--primary">
-                Tìm Kiếm
+                <Search className="ui-icon" aria-hidden="true" /> Tìm Kiếm
               </button>
               {(qParam || (catParam && catParam !== "Tất cả")) && (
                 <button
@@ -118,7 +119,7 @@ export default function AdminIngredientList() {
                   onClick={handleClearSearch}
                   className="admin-filter-btn btn--ghost"
                 >
-                  ✕ Xóa Bộ Lọc
+                  <X className="ui-icon" aria-hidden="true" /> Xóa Bộ Lọc
                 </button>
               )}
             </div>
@@ -144,7 +145,7 @@ export default function AdminIngredientList() {
                 marginRight: "4px",
               }}
             >
-              🏷️ Lọc theo tag:
+              <Tags className="ui-icon" aria-hidden="true" /> Lọc theo tag:
             </span>
             <div className="ingredient-tags-container">
               {INGREDIENT_TAGS.map((tag) => {
@@ -259,13 +260,13 @@ export default function AdminIngredientList() {
                               to={`/admin/ingredients/${item.id}/edit`}
                               className="btn-xs btn-xs-edit"
                             >
-                              Sửa
+                              <Pencil className="ui-icon" aria-hidden="true" /> Sửa
                             </Link>
                             <Link
                               to={`/admin/ingredients/${item.id}/delete`}
                               className="btn-xs btn-xs-delete"
                             >
-                              Xóa
+                              <Trash2 className="ui-icon" aria-hidden="true" /> Xóa
                             </Link>
                           </td>
                         </tr>

@@ -148,7 +148,7 @@ try
     await page.getByRole("textbox", { name: "Tìm nhanh nguyên liệu", exact: true }).fill("mắm");
     assert.equal(await page.locator(".ingredient-select-card").count(), 1);
     await page.getByRole("textbox", { name: "Tìm nhanh nguyên liệu", exact: true }).fill("");
-    await page.getByRole("button", { name: /✓ Đã chọn/ }).click();
+    await page.getByRole("button", { name: /^Đã chọn/ }).click();
     assert.equal(await page.locator(".ingredient-select-card").count(), 1);
     assert.equal(await page.getByRole("textbox", { name: "Số lượng Thịt thăn bò Úc", exact: true }).inputValue(), "275");
     await assertLayout(page);

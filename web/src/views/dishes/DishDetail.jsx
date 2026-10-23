@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { dishApi } from "../../apiClient";
@@ -63,7 +64,7 @@ export default function DishDetail() {
               title="Không Tìm Thấy Món Ăn"
               message="Món ăn bạn đang tìm kiếm không tồn tại hoặc đã ngừng phục vụ."
               backUrl="/dishes"
-              backText="← Quay Lại Thực Đơn"
+              backText="Quay Lại Thực Đơn"
             />
           </div>
         </section>
@@ -290,7 +291,7 @@ export default function DishDetail() {
 
                 <div className="detail-actions" style={{ marginTop: "10px" }}>
                   <Link to="/dishes" className="btn btn--primary">
-                    ← Quay Lại Thực Đơn
+                    <ArrowLeft className="ui-icon" aria-hidden="true" /> Quay Lại Thực Đơn
                   </Link>
                 </div>
               </div>

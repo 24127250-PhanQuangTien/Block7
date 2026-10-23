@@ -1,3 +1,4 @@
+import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { chefApi } from "../../../apiClient";
@@ -54,7 +55,7 @@ export default function AdminChefList() {
           </div>
           <div>
             <Link to="/admin/chefs/new" className="btn btn--primary">
-              + Thêm Đầu Bếp
+              <Plus className="ui-icon" aria-hidden="true" /> Thêm Đầu Bếp
             </Link>
           </div>
         </div>
@@ -78,7 +79,7 @@ export default function AdminChefList() {
             </div>
             <div className="admin-filter-buttons">
               <button type="submit" className="admin-filter-btn btn--primary">
-                Tìm Kiếm
+                <Search className="ui-icon" aria-hidden="true" /> Tìm Kiếm
               </button>
               {qParam && (
                 <button
@@ -86,7 +87,7 @@ export default function AdminChefList() {
                   onClick={handleClearSearch}
                   className="admin-filter-btn btn--ghost"
                 >
-                  ✕ Xóa Tìm Kiếm
+                  <X className="ui-icon" aria-hidden="true" /> Xóa Tìm Kiếm
                 </button>
               )}
             </div>
@@ -149,13 +150,13 @@ export default function AdminChefList() {
                             to={`/admin/chefs/${chef.id}/edit`}
                             className="btn-xs btn-xs-edit"
                           >
-                            Sửa
+                            <Pencil className="ui-icon" aria-hidden="true" /> Sửa
                           </Link>
                           <Link
                             to={`/admin/chefs/${chef.id}/delete`}
                             className="btn-xs btn-xs-delete"
                           >
-                            Xóa
+                            <Trash2 className="ui-icon" aria-hidden="true" /> Xóa
                           </Link>
                         </td>
                       </tr>

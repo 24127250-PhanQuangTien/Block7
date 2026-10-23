@@ -1,3 +1,4 @@
+import { ArrowLeft, Trash2, TriangleAlert } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { dishApi } from "../../../apiClient";
@@ -65,7 +66,7 @@ export default function DishDelete() {
             title="Không Tìm Thấy Món Ăn"
             message="Món ăn này không tồn tại hoặc đã bị gỡ khỏi thực đơn."
             backUrl="/admin/dishes"
-            backText="← Về Danh Sách Món Ăn"
+            backText="Về Danh Sách Món Ăn"
           />
         </div>
       </section>
@@ -121,7 +122,7 @@ export default function DishDelete() {
           </div>
 
           <div className="confirm-warning-note">
-            Lưu ý: Món ăn sau khi xóa sẽ không thể khôi phục lại.
+            <TriangleAlert className="ui-icon" aria-hidden="true" /> Lưu ý: Món ăn sau khi xóa sẽ không thể khôi phục lại.
           </div>
 
           <div className="confirm-actions">
@@ -132,14 +133,14 @@ export default function DishDelete() {
               className="btn btn--primary"
               style={{ background: "var(--burgundy)", color: "#fff", width: "100%" }}
             >
-              {submitting ? "Đang Xóa..." : "Xác Nhận Xóa Món"}
+              <Trash2 className="ui-icon" aria-hidden="true" /> {submitting ? "Đang Xóa..." : "Xác Nhận Xóa Món"}
             </button>
             <Link
               to="/admin/dishes"
               className="btn btn--ghost"
               style={{ width: "100%", textAlign: "center" }}
             >
-              Hủy Bỏ và Quay Lại
+              <ArrowLeft className="ui-icon" aria-hidden="true" /> Hủy Bỏ và Quay Lại
             </Link>
           </div>
         </div>
