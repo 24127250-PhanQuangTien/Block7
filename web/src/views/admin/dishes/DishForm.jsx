@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { dishApi, chefApi, ingredientApi } from "../../../apiClient";
 import { LoadingSpinner, NotFoundCard } from "../../../components/StateViews";
+import ChefSelect from "../../../components/ChefSelect";
 import {
   INGREDIENT_TAGS,
   getIngredientCategory,
@@ -28,6 +29,9 @@ export default function DishForm({ isEdit = false }) {
   const [ingredientUnits, setIngredientUnits] = useState({});
 
   const [chefs, setChefs] = useState([]);
+  const [chefsLoading, setChefsLoading] = useState(true);
+  const [chefsError, setChefsError] = useState(null);
+  const [chefLoadAttempt, setChefLoadAttempt] = useState(0);
   const [ingredients, setIngredients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -39,16 +43,42 @@ export default function DishForm({ isEdit = false }) {
   const [ingSearch, setIngSearch] = useState("");
   const [selectedIngTag, setSelectedIngTag] = useState("Tất cả");
 
+  useEffect(() =>
+  {
+    let cancelled = false;
+    setChefsLoading(true);
+    setChefsError(null);
+    chefApi.list().then((data) =>
+    {
+      if (!cancelled)
+      {
+        setChefs(data);
+      }
+    }).catch((error) =>
+    {
+      if (!cancelled)
+      {
+        setChefsError(error);
+      }
+    }).finally(() =>
+    {
+      if (!cancelled)
+      {
+        setChefsLoading(false);
+      }
+    });
+    return () =>
+    {
+      cancelled = true;
+    };
+  }, [chefLoadAttempt]);
+
   useEffect(() => {
     const initData = async () => {
       setLoading(true);
       setGeneralError(null);
       try {
-        const [loadedChefs, loadedIngredients] = await Promise.all([
-          chefApi.list(),
-          ingredientApi.list(),
-        ]);
-        setChefs(loadedChefs);
+        const loadedIngredients = await ingredientApi.list();
         setIngredients(loadedIngredients);
 
         if (isEdit) {
@@ -354,22 +384,18 @@ export default function DishForm({ isEdit = false }) {
               <label htmlFor="chefId" className="form-label required">
                 Đầu Bếp Phụ Trách:
               </label>
-              <select
-                id="chefId"
-                name="chefId"
-                className={`form-control ${fieldErrors.chefId ? "is-invalid" : ""}`}
+              <ChefSelect
                 value={formData.chefId}
-                onChange={handleChange}
-                required
-              >
-                <option value="">-- Chọn đầu bếp phụ trách món ăn --</option>
-                {chefs.map((chef) => (
-                  <option key={chef.id} value={chef.id}>
-                    {chef.name} — {chef.specialty || "Đầu bếp"}
-                  </option>
-                ))}
-              </select>
+                chefs={chefs}
+                loading={chefsLoading}
+                error={chefsError}
+                onRetry={() => setChefLoadAttempt((attempt) => attempt + 1)}
+                onChange={(value) => handleChange({ target: { name: "chefId", value } })}
+                invalid={Boolean(fieldErrors.chefId)}
+                describedBy={`chef-help${fieldErrors.chefId ? " chef-error" : ""}`}
+              />
               <small
+                id="chef-help"
                 style={{
                   color: "var(--text-muted)",
                   fontSize: "0.8rem",
@@ -380,7 +406,7 @@ export default function DishForm({ isEdit = false }) {
                 Mỗi món ăn bắt buộc phải có một đầu bếp đảm nhiệm chế biến.
               </small>
               {fieldErrors.chefId && (
-                <div className="field-error">
+                <div id="chef-error" className="field-error">
                   {fieldErrors.chefId}
                 </div>
               )}
@@ -425,6 +451,7 @@ export default function DishForm({ isEdit = false }) {
                     value={ingSearch}
                     onChange={(e) => setIngSearch(e.target.value)}
                     placeholder="Tìm nhanh nguyên liệu theo tên, đơn vị tính..."
+                    aria-label="Tìm nhanh nguyên liệu"
                     className="ingredient-search-input"
                   />
                   {ingSearch && (
@@ -482,7 +509,7 @@ export default function DishForm({ isEdit = false }) {
                 className="ingredients-checkbox-grid"
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(min(230px, 100%), 1fr))",
                   gap: "10px",
                   maxHeight: "320px",
                   overflowY: "auto",
@@ -514,16 +541,7 @@ export default function DishForm({ isEdit = false }) {
                               cursor: "pointer",
                             }}
                           />
-                          <span
-                            style={{
-                              flex: 1,
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                              fontSize: "0.88rem",
-                            }}
-                            title={ing.name}
-                          >
+                          <span className="ingredient-name">
                             <strong>{ing.name}</strong>
                           </span>
                           <span
@@ -537,8 +555,10 @@ export default function DishForm({ isEdit = false }) {
                         {/* Ô nhập số lượng & đơn vị tùy chỉnh (không có mũi tên, không bị kẹt số 1) */}
                         {isChecked && (
                           <div className="ingredient-qty-box">
-                            <label>Số lượng:</label>
+                            <label htmlFor={`ingredient-quantity-${ing.id}`}>Số lượng:</label>
                             <input
+                              id={`ingredient-quantity-${ing.id}`}
+                              aria-label={`Số lượng ${ing.name}`}
                               type="text"
                               inputMode="numeric"
                               value={
@@ -551,6 +571,7 @@ export default function DishForm({ isEdit = false }) {
                               placeholder="1"
                             />
                             <input
+                              aria-label={`Đơn vị ${ing.name}`}
                               type="text"
                               value={
                                 ingredientUnits[ing.id] !== undefined

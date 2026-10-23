@@ -2,6 +2,16 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ingredientApi } from "../../../apiClient";
 import { LoadingSpinner, NotFoundCard } from "../../../components/StateViews";
+import SelectField from "../../../components/SelectField";
+
+const categoryDescriptions = {
+  "Gia vị": "Hành, tỏi, ớt, mắm, muối, tiêu, dầu ăn...",
+  "Rau": "Rau thơm, rau củ quả, nấm tươi/khô...",
+  "Bún": "Bún, phở, mì, miến, hủ tiếu, bột...",
+  "Thịt": "Thịt bò, thịt heo, thịt gà, sườn, giò...",
+  "Hải sản": "Tôm, cua, mực, cá, nghêu...",
+  "Khác": "Các nguyên liệu thuộc nhóm khác.",
+};
 
 export default function IngredientForm({ isEdit = false }) {
   const { id } = useParams();
@@ -222,23 +232,22 @@ export default function IngredientForm({ isEdit = false }) {
             </div>
 
             <div className="form-group">
-              <label htmlFor="category" className="form-label">
+              <label id="category-label" htmlFor="category" className="form-label">
                 Phân Loại (Tag Nhóm Nguyên Liệu):
               </label>
-              <select
+              <SelectField
                 id="category"
                 name="category"
                 className="form-control"
                 value={formData.category}
-                onChange={handleChange}
-              >
-                <option value="Gia vị">Gia vị (Hành, tỏi, ớt, mắm, muối, tiêu, dầu ăn...)</option>
-                <option value="Rau">Rau (Rau thơm, rau củ quả, nấm tươi/khô...)</option>
-                <option value="Bún">Bún (Bún, phở, mì, miến, hủ tiếu, bột...)</option>
-                <option value="Thịt">Thịt (Thịt bò, thịt heo, thịt gà, sườn, giò...)</option>
-                <option value="Hải sản">Hải sản (Tôm, cua, mực, cá, nghêu...)</option>
-                <option value="Khác">Khác</option>
-              </select>
+                onChange={(value) => handleChange({ target: { name: "category", value } })}
+                labelledBy="category-label"
+                describedBy="ingredient-category-help"
+                options={Object.keys(categoryDescriptions).map((category) => ({ value: category, label: category }))}
+              />
+              <small id="ingredient-category-help" className="select-help">
+                {categoryDescriptions[formData.category]}
+              </small>
             </div>
 
             <div className="form-actions">

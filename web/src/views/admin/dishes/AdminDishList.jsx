@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { dishApi } from "../../../apiClient";
 import { LoadingSpinner, ErrorAlert } from "../../../components/StateViews";
+import SelectField from "../../../components/SelectField";
 
 export default function AdminDishList() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -157,38 +158,42 @@ export default function AdminDishList() {
 
             {/* 2. Lọc theo Trạng thái bếp */}
             <div className="admin-filter-field">
-              <label className="admin-filter-label" htmlFor="filter-status">
+              <label id="filter-status-label" className="admin-filter-label" htmlFor="filter-status">
                 Trạng thái bếp
               </label>
-              <select
+              <SelectField
                 id="filter-status"
                 name="status"
                 value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
+                onChange={setFilterStatus}
                 className="admin-filter-select"
-              >
-                <option value="">Tất cả</option>
-                <option value="available">Đang phục vụ</option>
-                <option value="unavailable">Tạm hết món</option>
-              </select>
+                labelledBy="filter-status-label"
+                options={[
+                  { value: "", label: "Tất cả" },
+                  { value: "available", label: "Đang phục vụ" },
+                  { value: "unavailable", label: "Tạm hết món" },
+                ]}
+              />
             </div>
 
             {/* 3. Sắp xếp kết quả (Chỉ giữ Giá thấp/cao, bỏ tên A-Z và mới tạo nhất) */}
             <div className="admin-filter-field">
-              <label className="admin-filter-label" htmlFor="filter-sort">
+              <label id="filter-sort-label" className="admin-filter-label" htmlFor="filter-sort">
                 Sắp xếp theo giá
               </label>
-              <select
+              <SelectField
                 id="filter-sort"
                 name="sort"
                 value={filterSort}
-                onChange={(e) => setFilterSort(e.target.value)}
+                onChange={setFilterSort}
                 className="admin-filter-select"
-              >
-                <option value="">Tất cả</option>
-                <option value="price_asc">Thấp đến Cao</option>
-                <option value="price_desc">Cao đến Thấp</option>
-              </select>
+                labelledBy="filter-sort-label"
+                options={[
+                  { value: "", label: "Tất cả" },
+                  { value: "price_asc", label: "Thấp đến Cao" },
+                  { value: "price_desc", label: "Cao đến Thấp" },
+                ]}
+              />
             </div>
 
             {/* Nút Thực thi & Xóa lọc */}

@@ -1,0 +1,173 @@
+{
+  "browser": "156.0.8078.47",
+  "evidence": [
+    {
+      "file": "status-open-440.png",
+      "left": 41,
+      "right": 399,
+      "top": 606.734375,
+      "bottom": 748.734375,
+      "width": 440,
+      "height": 956,
+      "navbarBottom": 84,
+      "scrollWidth": 356,
+      "clientWidth": 356
+    },
+    {
+      "file": "sort-open-440.png",
+      "left": 41,
+      "right": 399,
+      "top": 686.296875,
+      "bottom": 828.296875,
+      "width": 440,
+      "height": 956,
+      "navbarBottom": 84,
+      "scrollWidth": 356,
+      "clientWidth": 356
+    },
+    {
+      "file": "category-new-open-440.png",
+      "left": 43,
+      "right": 397,
+      "top": 403.984375,
+      "bottom": 677.984375,
+      "width": 440,
+      "height": 956,
+      "navbarBottom": 84,
+      "scrollWidth": 352,
+      "clientWidth": 352
+    },
+    {
+      "file": "category-edit-open-440.png",
+      "left": 43,
+      "right": 397,
+      "top": 429.828125,
+      "bottom": 703.828125,
+      "width": 440,
+      "height": 956,
+      "navbarBottom": 84,
+      "scrollWidth": 352,
+      "clientWidth": 352
+    },
+    {
+      "file": "category-small-height-open-440.png",
+      "left": 43,
+      "right": 397,
+      "top": 206.296875,
+      "bottom": 352,
+      "width": 440,
+      "height": 360,
+      "navbarBottom": 82.1875,
+      "scrollWidth": 352,
+      "clientWidth": 352
+    },
+    {
+      "file": "status-open-375.png",
+      "left": 41,
+      "right": 334,
+      "top": 632.578125,
+      "bottom": 774.578125,
+      "width": 375,
+      "height": 956,
+      "navbarBottom": 84,
+      "scrollWidth": 291,
+      "clientWidth": 291
+    },
+    {
+      "file": "sort-open-375.png",
+      "left": 41,
+      "right": 334,
+      "top": 712.140625,
+      "bottom": 854.140625,
+      "width": 375,
+      "height": 956,
+      "navbarBottom": 84,
+      "scrollWidth": 291,
+      "clientWidth": 291
+    },
+    {
+      "file": "category-new-open-375.png",
+      "left": 43,
+      "right": 332,
+      "top": 452.9375,
+      "bottom": 726.9375,
+      "width": 375,
+      "height": 956,
+      "navbarBottom": 84,
+      "scrollWidth": 287,
+      "clientWidth": 287
+    },
+    {
+      "file": "category-edit-open-375.png",
+      "left": 43,
+      "right": 332,
+      "top": 452.9375,
+      "bottom": 726.9375,
+      "width": 375,
+      "height": 956,
+      "navbarBottom": 84,
+      "scrollWidth": 287,
+      "clientWidth": 287
+    },
+    {
+      "file": "category-small-height-open-375.png",
+      "left": 43,
+      "right": 332,
+      "top": 206.25,
+      "bottom": 352,
+      "width": 375,
+      "height": 360,
+      "navbarBottom": 82.1875,
+      "scrollWidth": 287,
+      "clientWidth": 287
+    },
+    {
+      "file": "status-open-1440.png",
+      "left": 656.3125,
+      "right": 896.96875,
+      "top": 384.65625,
+      "bottom": 526.65625,
+      "width": 1440,
+      "height": 956,
+      "navbarBottom": 84,
+      "scrollWidth": 239,
+      "clientWidth": 239
+    },
+    {
+      "file": "sort-open-1440.png",
+      "left": 906.96875,
+      "right": 1147.625,
+      "top": 384.65625,
+      "bottom": 526.65625,
+      "width": 1440,
+      "height": 956,
+      "navbarBottom": 84,
+      "scrollWidth": 239,
+      "clientWidth": 239
+    },
+    {
+      "file": "category-new-open-1440.png",
+      "left": 401,
+      "right": 1039,
+      "top": 618.875,
+      "bottom": 892.875,
+      "width": 1440,
+      "height": 956,
+      "navbarBottom": 84,
+      "scrollWidth": 636,
+      "clientWidth": 636
+    },
+    {
+      "file": "category-edit-open-1440.png",
+      "left": 401,
+      "right": 1039,
+      "top": 618.875,
+      "bottom": 892.875,
+      "width": 1440,
+      "height": 956,
+      "navbarBottom": 84,
+      "scrollWidth": 636,
+      "clientWidth": 636
+    }
+  ]
+}
