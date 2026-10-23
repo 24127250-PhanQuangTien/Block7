@@ -221,9 +221,6 @@ export default function AdminDishDetail() {
                           }}
                         >
                           <strong style={{ color: "var(--burgundy)" }}>{ing.name}</strong>
-                          <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>
-                            (Tồn: {(ing.quantity || 0).toLocaleString("vi-VN")} {ing.unit})
-                          </span>
                         </span>
                       ))}
                     </div>
