@@ -6,7 +6,7 @@ import { mkdir } from "node:fs/promises";
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
 const base = process.env.WEB_TEST_URL || "http://localhost:5173";
-const evidence = new URL("../../docs/part2-evidence/", import.meta.url);
+const evidence = new URL("../../.temp/presentation-checks/", import.meta.url);
 const temporaryEvidence = new URL("../../.temp/part2-evidence/", import.meta.url);
 await mkdir(evidence, { recursive: true });
 await mkdir(temporaryEvidence, { recursive: true });

@@ -24,7 +24,6 @@ web/
   src/                 # Routes SPA, views, component, apiClient.js
   public/              # CSS, ảnh và font local
   tests/               # Unit test và browser suite dùng API mock
-docs/                  # Ảnh minh chứng các phần đã thực hiện
 package.json           # Scripts chuyển tiếp vào api/ hoặc web/
 ```
 
@@ -242,7 +241,7 @@ Ba suite đều chặn request API và trả fixture, gồm cả các thao tác 
 | `test:dropdowns` | Popup đang mở, chọn giá trị, vị trí/scroll, URL/reset, thứ tự lọc/sắp xếp và form nguyên liệu bằng mock; 1440/375/440px |
 | `test:presentation` | Hero, icon, tìm kiếm, điều hướng, lỗi/loading, bộ chọn; hồi quy menu khách/quản trị: toggle, bấm ngoài, Escape/focus, cùng/khác route, Back và breakpoint; 1440/375/440px, thêm chiều cao 180px |
 
-Browser suite chạy Chrome headless, mobile/cảm ứng được mô phỏng; không phải Safari hay điện thoại thật. Chúng chặn CDN ngoài để kiểm tra tài nguyên local, nên typography từ Google Fonts có thể dùng font dự phòng trong ảnh test. Ảnh/data được ghi vào `.temp/part1-checks/`, `.temp/dropdown-checks/`, `.temp/part2-evidence/` và `docs/part2-evidence/`; chạy test có thể làm ảnh đã theo dõi trong Git thay đổi. Xem `git status` trước khi quyết định giữ ảnh nào.
+Browser suite chạy Chrome headless, mobile/cảm ứng được mô phỏng; không phải Safari hay điện thoại thật. Chúng chặn CDN ngoài để kiểm tra tài nguyên local, nên typography từ Google Fonts có thể dùng font dự phòng trong ảnh test. Ảnh/data được ghi vào các thư mục tạm `.temp/part1-checks/`, `.temp/dropdown-checks/`, `.temp/part2-evidence/` và `.temp/presentation-checks/`, đã được Git bỏ qua.
 
 Chỉ kiểm tra menu khi cần, không thay thế ba suite nghiệm thu đầy đủ:
 
@@ -277,4 +276,4 @@ Remove-Item Env:NAVIGATION_ONLY
 - Ảnh món được nhập bằng URL/đường dẫn asset; chưa có luồng upload file. Không có đăng nhập, phân quyền, đặt hàng/thanh toán trong các route hiện tại.
 - Để demo: xác nhận API/DB có dữ liệu phù hợp, mở đúng localhost:5173 và kiểm tra thêm trên thiết bị thật. Các thao tác ghi thành công trong browser suite là mock; chưa chứng minh lưu/xóa trên DB thật bằng các suite đó.
 
-README này là hướng dẫn chạy chính. [Hướng dẫn cũ](HUONG_DAN_CHAY_PROJECT.md) và [Technical Stack](TECHNICAL_STACK.md) giữ bối cảnh tham khảo; kết quả nghiệm thu và giới hạn từng phần ở [bàn giao phần 1](PART1_HANDOFF.md), [phần 2](PART2_HANDOFF.md), [phần 3](PART3_HANDOFF.md).
+README này là hướng dẫn chạy chính. [Hướng dẫn cũ](HUONG_DAN_CHAY_PROJECT.md) và [Technical Stack](TECHNICAL_STACK.md) giữ bối cảnh tham khảo.

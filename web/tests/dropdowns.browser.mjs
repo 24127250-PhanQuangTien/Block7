@@ -1,4 +1,4 @@
-// Run with Vite, Chrome and PLAYWRIGHT_MODULE as documented in PART1_HANDOFF.md.
+// Run with Vite, Chrome and PLAYWRIGHT_MODULE as documented in README.md.
 // API responses are mocked. Every selection below opens and uses the visible popup.
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
