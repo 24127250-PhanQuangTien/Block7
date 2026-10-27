@@ -1,60 +1,183 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../prisma");
+const { Prisma } = require("@prisma/client");
 const { parseValidId, validateDish } = require("../validation");
 
-// 1. GET /api/dishes - Danh sách món ăn (có tìm kiếm q, category, status, sort)
+// GET /api/dishes - Tìm kiếm, lọc và phân trang món ăn ở database.
 router.get("/", async (req, res, next) => {
   try {
-    const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
-    const category = typeof req.query.category === "string" ? req.query.category.trim() : "";
-    const status = typeof req.query.status === "string" ? req.query.status.trim() : "";
-    const sort = typeof req.query.sort === "string" ? req.query.sort.trim() : "";
+    const categories = [
+      "Khai Vị",
+      "Món Cơm",
+      "Món Khô",
+      "Món Lẩu",
+      "Món Nước",
+      "Món Nướng",
+      "Tráng Miệng",
+      "Đồ Uống",
+    ];
+    const modes = ["basic", "advanced", "fulltext", "fuzzy"];
+    const sorts = ["id_asc", "name_asc", "name_desc", "price_asc", "price_desc"];
+    const errors = {};
+    const readString = (key) => {
+      const value = req.query[key];
+      if (value === undefined) return undefined;
+      if (typeof value !== "string") {
+        errors[key] = "Phải là một giá trị chuỗi duy nhất";
+        return undefined;
+      }
+      return value.trim();
+    };
+    const parsePositiveInteger = (key, fallback, maximum = Number.MAX_SAFE_INTEGER) => {
+      const raw = readString(key);
+      if (raw === undefined) return fallback;
+      if (!/^\d+$/.test(raw)) {
+        errors[key] = "Phải là số nguyên dương";
+        return fallback;
+      }
+      const value = Number(raw);
+      if (!Number.isSafeInteger(value) || value < 1 || value > maximum) {
+        errors[key] = `Phải là số nguyên dương không vượt quá ${maximum}`;
+        return fallback;
+      }
+      return value;
+    };
+    const q = readString("q") || "";
+    const category = readString("category") || "";
+    const minPriceText = readString("minPrice");
+    const maxPriceText = readString("maxPrice");
+    const availableValue = readString("available");
+    const legacyStatus = readString("status");
+    const availableText =
+      availableValue !== undefined
+        ? availableValue
+        : legacyStatus === "available"
+          ? "true"
+          : legacyStatus === "unavailable"
+            ? "false"
+            : undefined;
+    const modeValue = readString("mode");
+    const mode =
+      modeValue === undefined
+        ? category || legacyStatus
+          ? "advanced"
+          : "basic"
+        : modeValue;
+    const sortValue = readString("sort");
+    const sort = sortValue === undefined ? "id_asc" : sortValue;
+    const pageSize = parsePositiveInteger("pageSize", 10, 100);
+    const page = parsePositiveInteger("page", 1, Math.floor(Number.MAX_SAFE_INTEGER / pageSize));
+    const price = (key, value) => {
+      if (value === undefined || value === "") return null;
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        errors[key] = "Phải là số hữu hạn không âm";
+        return null;
+      }
+      return parsed;
+    };
+    const minPrice = price("minPrice", minPriceText);
+    const maxPrice = price("maxPrice", maxPriceText);
 
-    const where = {};
-    if (q) {
-      where.OR = [
-        { name: { contains: q, mode: "insensitive" } },
-        { description: { contains: q, mode: "insensitive" } },
-      ];
+    if (!modes.includes(mode)) errors.mode = "Chế độ tìm kiếm không được hỗ trợ";
+    if (!sorts.includes(sort)) errors.sort = "Kiểu sắp xếp không được hỗ trợ";
+    if (category && !categories.includes(category)) errors.category = "Danh mục không được hỗ trợ";
+    if (
+      legacyStatus !== undefined &&
+      legacyStatus !== "" &&
+      legacyStatus !== "available" &&
+      legacyStatus !== "unavailable"
+    ) {
+      errors.status = 'Chỉ chấp nhận "available" hoặc "unavailable"';
     }
-    if (category) {
-      where.category = category;
+    if (
+      availableText !== undefined &&
+      availableText !== "true" &&
+      availableText !== "false"
+    ) {
+      errors.available = 'Chỉ chấp nhận "true" hoặc "false"';
     }
-    if (status === "available") {
-      where.available = true;
-    } else if (status === "unavailable") {
-      where.available = false;
+    if (minPrice !== null && maxPrice !== null && minPrice > maxPrice) {
+      errors.minPrice = "Giá tối thiểu không được lớn hơn giá tối đa";
+    }
+    if ((mode === "fulltext" || mode === "fuzzy") && !q) {
+      errors.q = "Chế độ này yêu cầu từ khóa q không rỗng";
+    }
+    if (Object.keys(errors).length) {
+      return res.status(200).json({
+        ok: false,
+        data: null,
+        error: {
+          code: "VALIDATION_FAILED",
+          message: "Tham số danh sách món ăn không hợp lệ",
+          fields: errors,
+        },
+      });
     }
 
-    let orderBy = { id: "asc" };
-    if (sort === "price_asc") {
-      orderBy = { price: "asc" };
-    } else if (sort === "price_desc") {
-      orderBy = { price: "desc" };
-    } else if (sort === "name") {
-      orderBy = { name: "asc" };
-    } else if (sort === "newest") {
-      orderBy = { createdAt: "desc" };
+    const escapeLikeLiteral = (text) =>
+      `%${text.replace(/!/g, "!!").replace(/%/g, "!%").replace(/_/g, "!_")}%`;
+    const predicates = [];
+    if (mode === "basic" && q) {
+      predicates.push(Prisma.sql`d.name ILIKE ${escapeLikeLiteral(q)} ESCAPE '!'`);
+    } else if (mode === "advanced") {
+      if (q) predicates.push(Prisma.sql`d.name ILIKE ${escapeLikeLiteral(q)} ESCAPE '!'`);
+      if (category) predicates.push(Prisma.sql`d.category = ${category}`);
+      if (minPrice !== null) predicates.push(Prisma.sql`d.price >= ${minPrice}`);
+      if (maxPrice !== null) predicates.push(Prisma.sql`d.price <= ${maxPrice}`);
+      if (availableText !== undefined && availableText !== "") {
+        predicates.push(Prisma.sql`d.available = ${availableText === "true"}`);
+      }
+    } else if (mode === "fulltext") {
+      predicates.push(Prisma.sql`to_tsvector('simple', coalesce(d.name, '') || ' ' || coalesce(d.description, '')) @@ plainto_tsquery('simple', ${q})`);
+    } else if (mode === "fuzzy") {
+      predicates.push(Prisma.sql`similarity(d.name, ${q}) >= ${FUZZY_SIMILARITY_THRESHOLD}`);
     }
-
-    const dishes = await prisma.dish.findMany({
-      where,
-      include: {
-        chef: true,
-        ingredients: true,
-      },
-      orderBy,
-    });
+    const where = predicates.length
+      ? Prisma.sql`WHERE ${Prisma.join(predicates, " AND ")}`
+      : Prisma.empty;
+    const offset = (page - 1) * pageSize;
+    const orderBy = {
+      id_asc: Prisma.sql`d.id ASC`,
+      name_asc: Prisma.sql`d.name ASC, d.id ASC`,
+      name_desc: Prisma.sql`d.name DESC, d.id ASC`,
+      price_asc: Prisma.sql`d.price ASC, d.id ASC`,
+      price_desc: Prisma.sql`d.price DESC, d.id ASC`,
+    };
+    const selected = mode === "fulltext"
+      ? Prisma.sql`SELECT d.id, ts_rank(to_tsvector('simple', coalesce(d.name, '') || ' ' || coalesce(d.description, '')), plainto_tsquery('simple', ${q})) AS "searchScore" FROM dishes d ${where} ORDER BY "searchScore" DESC, d.id ASC LIMIT ${pageSize} OFFSET ${offset}`
+      : mode === "fuzzy"
+        ? Prisma.sql`SELECT d.id, similarity(d.name, ${q}) AS "searchScore" FROM dishes d ${where} ORDER BY "searchScore" DESC, d.id ASC LIMIT ${pageSize} OFFSET ${offset}`
+        : Prisma.sql`SELECT d.id FROM dishes d ${where} ORDER BY ${orderBy[sort]} LIMIT ${pageSize} OFFSET ${offset}`;
+    const [countRows, selectedRows] = await Promise.all([
+      prisma.$queryRaw(Prisma.sql`SELECT COUNT(*)::int AS total FROM dishes d ${where}`),
+      prisma.$queryRaw(selected),
+    ]);
+    const ids = selectedRows.map((row) => row.id);
+    const relationRows = ids.length
+      ? await prisma.dish.findMany({
+          where: { id: { in: ids } },
+          include: { chef: true, ingredients: true },
+        })
+      : [];
+    const byId = new Map(relationRows.map((dish) => [dish.id, dish]));
+    const items = selectedRows.map((row) => ({
+      ...byId.get(row.id),
+      ...(row.searchScore === undefined ? {} : { searchScore: Number(row.searchScore) }),
+    }));
 
     return res.status(200).json({
       ok: true,
-      data: dishes,
+      data: { items, total: countRows[0].total, page, pageSize },
+      error: null,
     });
   } catch (error) {
     next(error);
   }
 });
+
+const FUZZY_SIMILARITY_THRESHOLD = 0.3;
 
 // 2. GET /api/dishes/:id - Xem chi tiết một món ăn
 router.get("/:id", async (req, res, next) => {

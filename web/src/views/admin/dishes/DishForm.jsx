@@ -213,6 +213,16 @@ export default function DishForm({ isEdit = false }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const requiredErrors = {};
+    if (!formData.chefId) requiredErrors.chefId = "Vui lòng chọn một đầu bếp.";
+    if (formData.ingredientIds.length === 0) {
+      requiredErrors.ingredientIds = "Vui lòng chọn ít nhất một nguyên liệu.";
+    }
+    if (Object.keys(requiredErrors).length > 0) {
+      setFieldErrors(requiredErrors);
+      return;
+    }
+
     setSubmitting(true);
     setGeneralError(null);
     setFieldErrors({});

@@ -7,6 +7,9 @@
     "dev:api": "npm --prefix api run dev",
     "test:api": "npm --prefix api test",
     "seed:api": "npm --prefix api run seed",
+    "migrate:block7": "npm --prefix api run migrate:block7",
+    "seed:block7": "npm --prefix api run seed:block7",
+    "verify:block7": "npm --prefix api run verify:block7",
     "dev:web": "npm --prefix web run dev",
     "build:web": "npm --prefix web run build"
   }

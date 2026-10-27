@@ -105,9 +105,9 @@ function validateDish(body, isPatch = false) {
   }
 
   if (!isPatch || body.price !== undefined) {
-    const price = parseInteger(body.price, 1);
+    const price = parseInteger(body.price, 0);
     if (price === null) {
-      fields.price = "Giá món ăn phải là số nguyên dương lớn hơn 0";
+      fields.price = "Giá món ăn phải là số nguyên không âm";
     } else {
       data.price = price;
     }
@@ -122,7 +122,11 @@ function validateDish(body, isPatch = false) {
   }
 
   if (body.available !== undefined) {
-    data.available = Boolean(body.available);
+    if (typeof body.available !== "boolean") {
+      fields.available = "Trạng thái phục vụ phải là true hoặc false";
+    } else {
+      data.available = body.available;
+    }
   } else if (!isPatch) {
     data.available = true;
   }
@@ -131,9 +135,9 @@ function validateDish(body, isPatch = false) {
     data.imageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() || null : null;
   }
 
-  if (body.chefId !== undefined) {
-    if (body.chefId === null || body.chefId === "") {
-      data.chefId = null;
+  if (body.chefId !== undefined || !isPatch) {
+    if (body.chefId === undefined || body.chefId === null || body.chefId === "") {
+      fields.chefId = "Vui lòng chọn một đầu bếp";
     } else {
       const chefId = parseValidId(body.chefId);
       if (chefId === null) {
@@ -145,15 +149,18 @@ function validateDish(body, isPatch = false) {
   }
 
   let ingredientIds = undefined;
-  if (body.ingredientIds !== undefined) {
+  if (body.ingredientIds !== undefined || !isPatch) {
     if (!Array.isArray(body.ingredientIds)) {
-      fields.ingredientIds = "Danh sách nguyên liệu phải là một mảng ID";
+      fields.ingredientIds = "Vui lòng chọn ít nhất một nguyên liệu";
     } else {
       const parsed = body.ingredientIds.map(parseValidId);
       if (parsed.some((id) => id === null)) {
         fields.ingredientIds = "Một hoặc nhiều ID nguyên liệu không hợp lệ";
       } else {
         ingredientIds = [...new Set(parsed)];
+        if (ingredientIds.length === 0) {
+          fields.ingredientIds = "Vui lòng chọn ít nhất một nguyên liệu";
+        }
       }
     }
   }

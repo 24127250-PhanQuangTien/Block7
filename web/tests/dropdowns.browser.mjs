@@ -82,13 +82,17 @@ try
       let data = [];
       if (url.pathname === "/api/dishes")
       {
-        const status = url.searchParams.get("status");
+        const available = url.searchParams.get("available");
         const sort = url.searchParams.get("sort");
-        data = dishes.filter((dish) => !status || dish.available === (status === "available"));
-        if (sort)
-        {
-          data.sort((a, b) => sort === "price_asc" ? a.price - b.price : b.price - a.price);
-        }
+        data = dishes.filter((dish) => available === null || dish.available === (available === "true"));
+        if (sort === "price_asc") data.sort((a, b) => a.price - b.price || a.id - b.id);
+        if (sort === "price_desc") data.sort((a, b) => b.price - a.price || a.id - b.id);
+        if (sort === "name_asc") data.sort((a, b) => a.name.localeCompare(b.name) || a.id - b.id);
+        if (sort === "name_desc") data.sort((a, b) => b.name.localeCompare(a.name) || a.id - b.id);
+        const page = Number(url.searchParams.get("page") || 1);
+        const pageSize = Number(url.searchParams.get("pageSize") || 10);
+        const total = data.length;
+        data = { items: data.slice((page - 1) * pageSize, page * pageSize), total, page, pageSize };
       }
       if (url.pathname.startsWith("/api/ingredients"))
       {
@@ -136,7 +140,7 @@ try
     await page.getByRole("button", { name: "Lọc Dữ Liệu", exact: true }).click();
     await page.waitForURL(/status=unavailable.*sort=price_desc/);
     await page.locator(".spa-loading").waitFor({ state: "hidden" });
-    assert.ok(requests.some((url) => url.searchParams.get("status") === "unavailable" && url.searchParams.get("sort") === "price_desc"));
+    assert.ok(requests.some((url) => url.searchParams.get("available") === "false" && url.searchParams.get("sort") === "price_desc"));
     await waitForDishNames(page, ["Món D", "Món B"]);
     assert.deepEqual(await page.locator(".dish-name-cell").allTextContents(), ["Món D", "Món B"]);
     await page.reload();

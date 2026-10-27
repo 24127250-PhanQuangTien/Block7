@@ -267,6 +267,30 @@ Remove-Item Env:NAVIGATION_ONLY
 | Browser test không tìm thấy Playwright/Chrome | Cài công cụ tạm và Chrome, đặt `PLAYWRIGHT_MODULE` bằng Resolve-Path từ root; kiểm tra `WEB_TEST_URL` và preview đang chạy. |
 | Điều hướng browser test timeout | Kiểm tra preview có hoạt động đúng cổng; chạy tuần tự trên bản build thay vì nhiều suite đồng thời với HMR. Không bỏ assertion để ép test đạt. |
 
+## Block 7 — Tìm kiếm và phân trang
+
+Block 7 giữ Express/Prisma/PostgreSQL và endpoint `GET /api/dishes`, nhưng danh sách trả về theo trang trong envelope `{ ok, data: { items, total, page, pageSize }, error }`. FE gửi bộ lọc qua `fetch`; URL lưu điều kiện, kiểu hiển thị và trang.
+
+Sau khi cài dependency, cấu hình `api/.env` với các biến server-side `DATABASE_URL`, `PORT` và `CLIENT_ORIGIN`, chạy:
+
+```powershell
+npm.cmd run migrate:block7
+npm.cmd run seed:block7
+npm.cmd run start:api
+```
+
+Migration thêm `pg_trgm` và các index tìm kiếm. Seed Block 7 thêm 1.000 món xác định cùng 6 fixture; chỉ dọn các món do script nhận diện bằng tên/marker Block 7, không tạo/xóa đầu bếp hoặc nguyên liệu, không xóa dữ liệu món cũ, và backfill quan hệ nguyên liệu/đầu bếp cho mọi món theo cách xác định. Script in số món thiếu quan hệ và số món của từng đầu bếp sau khi chạy; có thể chạy lại an toàn. **Không dùng `npm run seed:api` cho Block 7**: đó là seed Block 6 cũ, xóa và tạo lại dữ liệu món/đầu bếp/nguyên liệu.
+
+Trong terminal khác, chạy `npm.cmd run dev:web`, mở `http://localhost:5173`, rồi kiểm tra API thật:
+
+```powershell
+npm.cmd run verify:block7
+```
+
+Script kiểm thử gọi `http://localhost:3000/api/dishes` và cần API đang chạy cùng database đã migrate/seed. Có thể đổi địa chỉ bằng biến `BLOCK7_API_URL` (gốc API, không phải chuỗi kết nối). Các ví dụ filter/search, kết quả đã xác minh, lựa chọn kỹ thuật và ghi nhận kiểm thử UI nằm trong [EVIDENCE.md](./EVIDENCE.md) và [tech-choice.md](./tech-choice.md).
+
+Giá tiếp tục dùng cột `Int` của schema Block 6 (đơn vị tiền nguyên, cho phép 0); `description` đã nullable, `category` và `available` đã có. Không đổi kiểu/cột để tránh phá dữ liệu hoặc API cũ.
+
 ## 10. Tài nguyên và giới hạn hiện tại
 
 - Hero AI minh họa được lưu local, không phải ảnh thực tế của nhà hàng: [nguồn/prompt/điều kiện sử dụng](web/public/assets/img/menu-hero.SOURCE.txt).

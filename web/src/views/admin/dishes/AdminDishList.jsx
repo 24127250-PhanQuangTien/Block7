@@ -152,7 +152,7 @@ export default function AdminDishList() {
                 name="q"
                 value={filterQ}
                 onChange={(e) => setFilterQ(e.target.value)}
-                placeholder="Tìm theo tên món hoặc nguyên liệu..."
+                placeholder="Tìm theo tên món..."
                 className="admin-filter-input"
               />
             </div>
@@ -222,21 +222,21 @@ export default function AdminDishList() {
         {/* Trạng thái Lỗi */}
         {!loading && error && <ErrorAlert error={error} onRetry={fetchDishes} />}
 
-        {/* Bảng danh sách món ăn: 1 món nằm vừa vặn 1 dòng, không có mô tả, không cần cuộn ngang */}
+        {/* Bảng giữ nguyên một dòng; màn hình hẹp có thể cuộn ngang để xem cột hành động. */}
         {!loading && !error && (
-          <div className="admin-table-card">
-            <table className="data-table">
+          <div className="admin-table-card admin-dish-table-card">
+            <table className="data-table admin-dish-table">
               <thead>
                 <tr>
-                  <th style={{ width: "50px", textAlign: "center" }}>ID</th>
-                  <th style={{ width: "65px", textAlign: "center" }}>Ảnh</th>
-                  <th>Tên Món Ăn</th>
-                  <th style={{ width: "120px", textAlign: "center" }}>Phân Loại</th>
-                  <th style={{ width: "140px" }}>Đầu Bếp</th>
-                  <th style={{ width: "95px", textAlign: "center" }}>Nguyên Liệu</th>
-                  <th style={{ width: "115px", textAlign: "right" }}>Đơn Giá</th>
-                  <th style={{ width: "115px", textAlign: "center" }}>Trạng Thái</th>
-                  <th style={{ width: "145px", textAlign: "center" }}>Hành Động</th>
+                  <th className="dish-column-id">ID</th>
+                  <th className="dish-column-image">Ảnh</th>
+                  <th className="dish-column-name">Tên Món Ăn</th>
+                  <th className="dish-column-category">Phân Loại</th>
+                  <th className="dish-column-chef">Đầu Bếp</th>
+                  <th className="dish-column-ingredients">Nguyên Liệu</th>
+                  <th className="dish-column-price">Đơn Giá</th>
+                  <th className="dish-column-status">Trạng Thái</th>
+                  <th className="dish-column-actions">Hành Động</th>
                 </tr>
               </thead>
               <tbody>
@@ -279,10 +279,10 @@ export default function AdminDishList() {
 
                     return (
                       <tr key={dish.id}>
-                        <td style={{ textAlign: "center" }}>
+                        <td className="dish-column-id">
                           <strong>#{dish.id}</strong>
                         </td>
-                        <td style={{ textAlign: "center" }}>
+                        <td className="dish-column-image">
                           <Link to={`/admin/dishes/${dish.id}`}>
                             <img
                               src={displayImg}
@@ -304,12 +304,12 @@ export default function AdminDishList() {
                             {dish.name}
                           </Link>
                         </td>
-                        <td style={{ textAlign: "center" }}>
+                        <td className="dish-column-category">
                           <span className="menu-item__tag" style={{ margin: 0 }}>
                             {dish.category || "Món chung"}
                           </span>
                         </td>
-                        <td>
+                        <td className="dish-column-chef">
                           <span
                             style={{
                               fontSize: "0.9rem",
@@ -320,7 +320,7 @@ export default function AdminDishList() {
                             {dish.chef ? dish.chef.name : "—"}
                           </span>
                         </td>
-                        <td style={{ textAlign: "center" }}>
+                        <td className="dish-column-ingredients">
                           {(() => {
                             const ingNames = dish.ingredients
                               ? dish.ingredients.map((i) => i.name).join(", ")
@@ -336,7 +336,7 @@ export default function AdminDishList() {
                             );
                           })()}
                         </td>
-                        <td style={{ textAlign: "right" }}>
+                        <td className="dish-column-price">
                           <strong
                             style={{
                               color: "var(--burgundy)",
@@ -347,7 +347,7 @@ export default function AdminDishList() {
                             {dish.price.toLocaleString("vi-VN")} đ
                           </strong>
                         </td>
-                        <td style={{ textAlign: "center" }}>
+                        <td className="dish-column-status">
                           <span
                             className={`menu-item__tag ${
                               dish.available
@@ -359,25 +359,33 @@ export default function AdminDishList() {
                             {dish.available ? "Đang phục vụ" : "Tạm hết"}
                           </span>
                         </td>
-                        <td className="action-cell" style={{ textAlign: "center" }}>
-                          <Link
-                            to={`/admin/dishes/${dish.id}`}
-                            className="btn-xs btn-xs-view"
-                          >
-                            <Eye className="ui-icon" aria-hidden="true" /> Xem
-                          </Link>
-                          <Link
-                            to={`/admin/dishes/${dish.id}/edit`}
-                            className="btn-xs btn-xs-edit"
-                          >
-                            <Pencil className="ui-icon" aria-hidden="true" /> Sửa
-                          </Link>
-                          <Link
-                            to={`/admin/dishes/${dish.id}/delete`}
-                            className="btn-xs btn-xs-delete"
-                          >
-                            <Trash2 className="ui-icon" aria-hidden="true" /> Xóa
-                          </Link>
+                        <td className="action-cell dish-column-actions">
+                          <div className="dish-actions">
+                            <Link
+                              to={`/admin/dishes/${dish.id}`}
+                              className="btn-xs btn-xs-view"
+                              title="Xem"
+                              aria-label="Xem"
+                            >
+                              <Eye className="ui-icon" aria-hidden="true" />
+                            </Link>
+                            <Link
+                              to={`/admin/dishes/${dish.id}/edit`}
+                              className="btn-xs btn-xs-edit"
+                              title="Sửa"
+                              aria-label="Sửa"
+                            >
+                              <Pencil className="ui-icon" aria-hidden="true" />
+                            </Link>
+                            <Link
+                              to={`/admin/dishes/${dish.id}/delete`}
+                              className="btn-xs btn-xs-delete"
+                              title="Xóa"
+                              aria-label="Xóa"
+                            >
+                              <Trash2 className="ui-icon" aria-hidden="true" />
+                            </Link>
+                          </div>
                         </td>
                       </tr>
                     );

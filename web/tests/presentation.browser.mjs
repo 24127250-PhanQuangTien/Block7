@@ -189,7 +189,7 @@ try
         await route.fulfill({ status: 503, json: { message: "Không thể tải thực đơn. Vui lòng thử lại." } });
         return;
       }
-      let data = /\/\d+$/.test(url.pathname) ? dish : [dish];
+      let data = /\/\d+$/.test(url.pathname) ? dish : { items: [dish], total: 1, page: 1, pageSize: 10 };
       if (url.pathname.includes("chefs"))
       {
         data = /\/\d+$/.test(url.pathname) ? chef : [chef];

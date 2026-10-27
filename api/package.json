@@ -8,6 +8,9 @@
     "dev": "node --watch src/server.js",
     "test": "node --test tests/api.test.js",
     "seed": "node prisma/seed.js",
+    "seed:block7": "node prisma/seed_block7.js",
+    "migrate:block7": "node prisma/migrate_block7.js",
+    "verify:block7": "node tests/verify-block7.js",
     "db:push": "npx prisma db push",
     "db:generate": "npx prisma generate"
   },

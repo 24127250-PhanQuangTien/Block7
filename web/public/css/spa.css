@@ -79,6 +79,195 @@
   color: var(--text-muted);
 }
 
+.dish-search-panel {
+  margin: 0 auto 24px;
+  padding: 20px;
+  border: 1px solid rgba(128, 91, 55, 0.2);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgba(47, 35, 23, 0.06);
+}
+
+.dish-search-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.dish-search-primary-fields {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.05fr) minmax(220px, 2fr) minmax(145px, 1fr) minmax(140px, 0.9fr);
+  gap: 14px;
+}
+
+.dish-search-advanced-fields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.dish-form-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-dark);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.dish-form-field input,
+.dish-form-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid rgba(57, 47, 39, 0.24);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text-dark);
+  font: inherit;
+}
+
+.dish-form-field select:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.dish-search-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dish-search-help-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 20px;
+  margin-top: 14px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.dish-search-help-row p {
+  margin: 0;
+}
+
+.dish-search-note {
+  margin: -10px 0 18px;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.dish-results-toolbar,
+.dish-view-switch,
+.dish-pagination,
+.dish-load-more,
+.dish-load-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.dish-results-toolbar {
+  justify-content: space-between;
+  margin: 20px 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.dish-view-switch button,
+.dish-pagination button {
+  min-height: 38px;
+  padding: 7px 13px;
+  border: 1px solid rgba(57, 47, 39, 0.2);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+
+.dish-view-switch button.is-active,
+.dish-pagination button.is-current {
+  border-color: var(--burgundy);
+  background: var(--burgundy);
+  color: #fff;
+}
+
+.dish-pagination,
+.dish-load-more {
+  margin: 28px 0;
+}
+
+.dish-pagination button:disabled,
+.dish-load-more button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.dish-load-error {
+  justify-content: space-between;
+  margin: 16px 0;
+  padding: 12px;
+  border: 1px solid #e8b6b6;
+  border-radius: 6px;
+  color: #9b2525;
+}
+
+.dish-empty-state {
+  padding: 48px 16px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.dish-scroll-sentinel {
+  height: 1px;
+}
+
+.dish-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 900px) {
+  .dish-search-primary-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dish-search-advanced-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .dish-search-panel {
+    padding: 14px;
+  }
+
+  .dish-search-primary-fields,
+  .dish-search-advanced-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dish-search-help-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dish-results-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 /* Banner thông báo lỗi */
 .spa-error-banner {
   background: #FEF2F2;
@@ -369,25 +558,108 @@ input::-webkit-inner-spin-button {
 }
 
 /* Tối ưu bảng dữ liệu món ăn: nằm gọn 1 dòng không cuộn ngang */
-.admin-table-card .data-table {
+.admin-dish-table-card {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.admin-dish-table {
   width: 100%;
+  min-width: 1080px;
   table-layout: auto;
 }
 
-.admin-table-card .data-table th,
-.admin-table-card .data-table td {
+.admin-dish-table th,
+.admin-dish-table td {
   padding: 10px 8px;
   vertical-align: middle;
 }
 
-.admin-table-card .data-table .dish-name-cell {
+.admin-dish-table .dish-column-id,
+.admin-dish-table .dish-column-image,
+.admin-dish-table .dish-column-ingredients {
+  text-align: center;
+}
+
+.admin-dish-table .dish-column-id {
+  width: 54px;
+}
+
+.admin-dish-table .dish-column-image {
+  width: 64px;
+}
+
+.admin-dish-table .dish-column-name {
+  width: auto;
+  min-width: 150px;
+}
+
+.admin-dish-table .dish-column-category {
+  width: 110px;
+  text-align: center;
+}
+
+.admin-dish-table .dish-column-chef {
+  width: 135px;
+}
+
+.admin-dish-table .dish-column-ingredients {
+  width: 86px;
+}
+
+.admin-dish-table .dish-column-price {
+  width: 108px;
+  text-align: right;
+}
+
+.admin-dish-table .dish-column-status {
+  width: 125px;
+  text-align: center;
+}
+
+.admin-dish-table .dish-column-actions {
+  width: 132px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.admin-dish-table td.action-cell {
+  display: table-cell;
+}
+
+.dish-actions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.admin-dish-table .dish-actions .btn-xs {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 6px;
+}
+
+.admin-dish-table .dish-actions .ui-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-dish-table .dish-name-cell {
   color: var(--charcoal);
   font-weight: 700;
   text-decoration: none;
   font-size: 0.95rem;
 }
 
-.admin-table-card .data-table .dish-name-cell:hover {
+.admin-dish-table .dish-name-cell:hover {
   color: var(--burgundy);
 }
 
@@ -1065,6 +1337,3 @@ select.form-control,
     animation-duration: 2s;
   }
 }
-
-
-

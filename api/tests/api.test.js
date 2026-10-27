@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const request = require("supertest");
 const app = require("../src/app");
 const prisma = require("../src/prisma");
+const { validateDish } = require("../src/validation");
 
 test.after(async () => {
   await prisma.$disconnect();
@@ -31,11 +32,14 @@ test("3. Lỗi Kỹ thuật 404: Gọi sai URL route phải trả về HTTP 404 
   assert.equal(res.body.statusCode, 404);
 });
 
-test("4. GET /api/dishes: Trả về danh sách món ăn với status 200 và response shape { ok: true, data }", async () => {
+test("4. GET /api/dishes: Trả về trang món ăn với status 200 và metadata phân trang", async () => {
   const res = await request(app).get("/api/dishes");
   assert.equal(res.status, 200);
   assert.equal(res.body.ok, true);
-  assert.ok(Array.isArray(res.body.data));
+  assert.ok(Array.isArray(res.body.data.items));
+  assert.equal(res.body.data.page, 1);
+  assert.equal(res.body.data.pageSize, 10);
+  assert.equal(res.body.error, null);
 });
 
 test("5. GET /api/dishes/:id (Không tồn tại): Trả về status 200 và lỗi nghiệp vụ NOT_FOUND", async () => {
@@ -62,6 +66,22 @@ test("7. POST /api/dishes (Dữ liệu không hợp lệ): Trả về status 200
   assert.equal(res.body.error.code, "VALIDATION_FAILED");
   assert.ok(res.body.error.fields.name);
   assert.ok(res.body.error.fields.price);
+  assert.ok(res.body.error.fields.chefId);
+  assert.ok(res.body.error.fields.ingredientIds);
+});
+
+test("Dish validation requires one chef and at least one ingredient", () => {
+  const missingAssociations = validateDish({ name: "Món thử", price: 10000 });
+  assert.equal(missingAssociations.isValid, false);
+  assert.ok(missingAssociations.fields.chefId);
+  assert.ok(missingAssociations.fields.ingredientIds);
+
+  const clearedAssociations = validateDish({ chefId: null, ingredientIds: [] }, true);
+  assert.equal(clearedAssociations.isValid, false);
+  assert.ok(clearedAssociations.fields.chefId);
+  assert.ok(clearedAssociations.fields.ingredientIds);
+
+  assert.equal(validateDish({}, true).isValid, true);
 });
 
 test("8. GET /api/chefs: Trả về status 200 và response shape { ok: true, data }", async () => {

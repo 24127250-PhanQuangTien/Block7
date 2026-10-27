@@ -20,6 +20,7 @@ export async function apiRequest(endpoint, options = {}) {
       ...options,
     });
   } catch (networkError) {
+    if (networkError.name === "AbortError") throw networkError;
     throw {
       type: "NETWORK_ERROR",
       isTechnical: true,
@@ -72,14 +73,35 @@ export async function apiRequest(endpoint, options = {}) {
 
 // ==================== CÁC HÀM TIỆN ÍCH CHO MÓN ĂN ====================
 export const dishApi = {
-  list: (params = {}) => {
+  listPage: (params = {}, signal) => {
     const query = new URLSearchParams();
-    if (params.q) query.set("q", params.q);
-    if (params.category) query.set("category", params.category);
-    if (params.status) query.set("status", params.status);
-    if (params.sort) query.set("sort", params.sort);
-    const qs = query.toString() ? `?${query.toString()}` : "";
-    return apiRequest(`/dishes${qs}`);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") query.set(key, String(value));
+    });
+    return apiRequest(`/dishes?${query.toString()}`, { signal });
+  },
+  list: (params = {}) => {
+    const query = {
+      mode: params.category || params.status ? "advanced" : "basic",
+      sort: params.sort === "name" ? "name_asc" : params.sort || "id_asc",
+      page: 1,
+      pageSize: 100,
+    };
+    if (params.q) query.q = params.q;
+    if (params.category) query.category = params.category;
+    if (params.status === "available") query.available = "true";
+    if (params.status === "unavailable") query.available = "false";
+
+    const loadAll = async () => {
+      const first = await dishApi.listPage(query);
+      const items = [...first.items];
+      for (let page = 2; page <= Math.ceil(first.total / first.pageSize); page += 1) {
+        const result = await dishApi.listPage({ ...query, page });
+        items.push(...result.items);
+      }
+      return items;
+    };
+    return loadAll();
   },
   getById: (id) => apiRequest(`/dishes/${id}`),
   create: (data) =>

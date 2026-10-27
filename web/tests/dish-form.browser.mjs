@@ -68,7 +68,7 @@ async function setup(width, options = {})
     }
     else
     {
-      data = /\/\d+$/.test(url.pathname) ? dish : [dish];
+      data = /\/\d+$/.test(url.pathname) ? dish : { items: [dish], total: 1, page: 1, pageSize: 10 };
     }
     await route.fulfill({ json: { ok: true, data } });
   });
