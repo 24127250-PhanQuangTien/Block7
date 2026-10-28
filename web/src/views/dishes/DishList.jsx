@@ -49,23 +49,30 @@ function DishCards({ dishes }) {
             </div>
             <div className="menu-item__info">
               <div className="menu-item__header">
-                <Link to={`/dishes/${dish.id}`} className="menu-item__name">
+                <Link to={`/dishes/${dish.id}`} className="menu-item__name" title={dish.name}>
                   {dish.name}
                 </Link>
                 <span className="menu-item__dots" />
                 <span className="menu-item__price">{dish.price.toLocaleString("vi-VN")} đ</span>
               </div>
-              {(dish.chef || dish.ingredients?.length > 0) && (
-                <div className="dish-card-meta">
-                  {dish.chef && <span>Bếp: {dish.chef.name}</span>}
-                  {dish.ingredients?.length > 0 && (
-                    <span>
-                      Nguyên liệu: {dish.ingredients.slice(0, 3).map((item) => item.name).join(", ")}
-                      {dish.ingredients.length > 3 ? "..." : ""}
-                    </span>
-                  )}
-                </div>
-              )}
+              <div className="dish-card-meta">
+                <span className="dish-card-meta__line" title={dish.chef ? `Bếp: ${dish.chef.name}` : "Bếp: Đang cập nhật"}>
+                  Bếp: {dish.chef ? dish.chef.name : "Đang cập nhật"}
+                </span>
+                <span
+                  className="dish-card-meta__line"
+                  title={
+                    dish.ingredients?.length > 0
+                      ? `Nguyên liệu: ${dish.ingredients.map((item) => item.name).join(", ")}`
+                      : "Nguyên liệu: Đang cập nhật"
+                  }
+                >
+                  Nguyên liệu:{" "}
+                  {dish.ingredients?.length > 0
+                    ? dish.ingredients.map((item) => item.name).join(", ")
+                    : "Đang cập nhật"}
+                </span>
+              </div>
               <div className="menu-item__tags">
                 {dish.category && <span className="menu-item__tag">{dish.category}</span>}
                 <span
@@ -116,7 +123,10 @@ export default function DishList() {
   const view = ["pages", "load-more", "infinite"].includes(appliedParams.get("view"))
     ? appliedParams.get("view")
     : "pages";
-  const mode = appliedParams.get("mode") || "basic";
+  const mode =
+    appliedParams.get("mode") ||
+    (appliedParams.has("category") || appliedParams.has("status") ? "advanced" : "basic");
+  const activeCategory = appliedParams.get("category") || "";
   const page = appliedParams.get("page") || "1";
   const pageSize = appliedParams.get("pageSize") || "10";
   const currentPage = Math.max(1, Number(page) || 1);
@@ -258,6 +268,20 @@ export default function DishList() {
     }
   }, [incrementalKey, nextPage, requestParams]);
 
+  // Ở chế độ "Tải thêm" (load-more), tự động tải sẵn trang đầu tiên theo pageSize đã chọn
+  useEffect(() => {
+    if (
+      view === "load-more" &&
+      items.length === 0 &&
+      nextPage === 1 &&
+      !pending &&
+      !incrementalEnd &&
+      !incrementalError
+    ) {
+      loadNext();
+    }
+  }, [view, items.length, nextPage, pending, incrementalEnd, incrementalError, loadNext]);
+
   useEffect(() => {
     if (view !== "infinite" || incrementalEnd || !sentinelRef.current) return undefined;
     const observer = new IntersectionObserver(
@@ -276,6 +300,20 @@ export default function DishList() {
     Object.entries(updates).forEach(([key, value]) => setOptional(params, key, String(value)));
     params.set("page", "1");
     setSearchParams(params);
+  };
+
+  const handleCategoryQuickFilter = (categoryValue) => {
+    const params = new URLSearchParams(searchParams);
+    const nextCat = categoryValue === activeCategory ? "" : categoryValue;
+    if (nextCat) {
+      params.set("mode", "advanced");
+      params.set("category", nextCat);
+    } else {
+      params.delete("category");
+    }
+    params.set("page", "1");
+    setSearchParams(params);
+    setSearchEpoch((epoch) => epoch + 1);
   };
 
   const handleSubmit = (event) => {
@@ -381,6 +419,58 @@ export default function DishList() {
           </div>
 
           <div className="dish-search-panel">
+            {/* 1. Khung chuyển đổi 3 chế độ phân trang được đẩy lên trên cùng */}
+            <div className="dish-results-toolbar">
+              <div className="dish-view-group">
+                <span className="dish-view-label">Chế độ hiển thị:</span>
+                <div className="dish-view-switch" role="group" aria-label="Kiểu hiển thị phân trang">
+                  {[
+                    ["pages", "Số trang"],
+                    ["load-more", "Tải thêm"],
+                    ["infinite", "Cuộn vô hạn"],
+                  ].map(([value, label]) => (
+                    <button
+                      key={value}
+                      type="button"
+                      aria-pressed={view === value}
+                      className={view === value ? "is-active" : ""}
+                      onClick={() => handleView(value)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {resultTotal !== null && resultTotal !== undefined && (
+                <span className="dish-results-count">
+                  {resultTotal.toLocaleString("vi-VN")} món phù hợp
+                </span>
+              )}
+            </div>
+
+            {/* 2. Thanh lọc nhanh theo danh mục (Tag Pills) gọn gàng */}
+            <div className="dish-category-strip" role="group" aria-label="Lọc nhanh theo phân loại">
+              <span className="category-filter-label">Phân loại:</span>
+              <button
+                type="button"
+                className={`category-pill ${!activeCategory ? "active" : ""}`}
+                onClick={() => handleCategoryQuickFilter("")}
+              >
+                Tất cả
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  type="button"
+                  className={`category-pill ${activeCategory === category ? "active" : ""}`}
+                  onClick={() => handleCategoryQuickFilter(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+
+            {/* 3. Form tìm kiếm và lọc chi tiết */}
             <form className="dish-search-form" onSubmit={handleSubmit}>
               <div className="dish-search-primary-fields">
                 <div className="dish-form-field">
@@ -404,6 +494,7 @@ export default function DishList() {
                   <input
                     id="dish-search-query"
                     type="search"
+                    aria-label="Tìm món ăn"
                     value={draft.q}
                     onChange={(event) =>
                       setDraft((current) => ({ ...current, q: event.target.value }))
@@ -510,21 +601,23 @@ export default function DishList() {
                 </div>
               )}
 
-              <div className="dish-search-actions">
-                <button className="btn btn--primary" type="submit">
-                  <Search className="ui-icon" aria-hidden="true" /> Tìm kiếm
-                </button>
-                <button className="btn btn--outline" type="button" onClick={clearConditions}>
-                  <X className="ui-icon" aria-hidden="true" /> Xóa điều kiện
-                </button>
+              <div className="dish-search-footer">
+                <div className="dish-search-help-row" aria-live="polite">
+                  <p>{searchModeDescriptions[draft.mode]}</p>
+                  {(draft.mode === "fulltext" || draft.mode === "fuzzy") && (
+                    <p><strong>Xếp theo độ phù hợp.</strong></p>
+                  )}
+                </div>
+                <div className="dish-search-actions">
+                  <button className="btn btn--primary" type="submit">
+                    <Search className="ui-icon" aria-hidden="true" /> Tìm kiếm
+                  </button>
+                  <button className="btn btn--outline" type="button" onClick={clearConditions}>
+                    <X className="ui-icon" aria-hidden="true" /> Xóa điều kiện
+                  </button>
+                </div>
               </div>
             </form>
-            <div className="dish-search-help-row" aria-live="polite">
-              <p>{searchModeDescriptions[draft.mode]}</p>
-              {(draft.mode === "fulltext" || draft.mode === "fuzzy") && (
-                <p>Xếp theo độ phù hợp.</p>
-              )}
-            </div>
           </div>
 
           {mode === "fuzzy" && (
@@ -532,29 +625,6 @@ export default function DishList() {
               Tìm gần đúng dùng độ tương đồng toàn tên món; ngưỡng là 0.3.
             </p>
           )}
-
-          <div className="dish-results-toolbar">
-            <div className="dish-view-switch" role="group" aria-label="Kiểu hiển thị phân trang">
-              {[
-                ["pages", "Số trang"],
-                ["load-more", "Tải thêm"],
-                ["infinite", "Cuộn vô hạn"],
-              ].map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={view === value}
-                  className={view === value ? "is-active" : ""}
-                  onClick={() => handleView(value)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {resultTotal !== null && resultTotal !== undefined && (
-              <span>{resultTotal.toLocaleString("vi-VN")} món phù hợp</span>
-            )}
-          </div>
 
           {view === "pages" && pageLoading && <LoadingSpinner />}
           {view === "pages" && !pageLoading && pageError && (

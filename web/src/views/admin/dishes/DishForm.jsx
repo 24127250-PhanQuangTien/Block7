@@ -1,4 +1,4 @@
-import { Check, CircleAlert, RotateCcw, Save, Search, X } from "lucide-react";
+import { Check, CircleAlert, Plus, RotateCcw, Save, Search, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { dishApi, chefApi, ingredientApi } from "../../../apiClient";
@@ -40,7 +40,8 @@ export default function DishForm({ isEdit = false }) {
   const [fieldErrors, setFieldErrors] = useState({});
   const [notFound, setNotFound] = useState(false);
 
-  // Bộ lọc và tìm kiếm nhanh nguyên liệu
+  // Trạng thái mở/đóng Popup chọn nguyên liệu + bộ lọc trong Popup
+  const [ingPopupOpen, setIngPopupOpen] = useState(false);
   const [ingSearch, setIngSearch] = useState("");
   const [selectedIngTag, setSelectedIngTag] = useState("Tất cả");
 
@@ -120,6 +121,18 @@ export default function DishForm({ isEdit = false }) {
     initData();
   }, [id, isEdit]);
 
+  // Đóng popup khi bấm phím Escape
+  useEffect(() => {
+    if (!ingPopupOpen) return undefined;
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setIngPopupOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [ingPopupOpen]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -135,13 +148,10 @@ export default function DishForm({ isEdit = false }) {
     }
   };
 
-  const handleIngredientToggle = (ingId) => {
+  const handleAddIngredient = (ingId) => {
     setFormData((prev) => {
-      const exists = prev.ingredientIds.includes(ingId);
-      const nextIds = exists
-        ? prev.ingredientIds.filter((item) => item !== ingId)
-        : [...prev.ingredientIds, ingId];
-      return { ...prev, ingredientIds: nextIds };
+      if (prev.ingredientIds.includes(ingId)) return prev;
+      return { ...prev, ingredientIds: [...prev.ingredientIds, ingId] };
     });
 
     setIngredientQuantities((prev) => {
@@ -170,6 +180,13 @@ export default function DishForm({ isEdit = false }) {
     }
   };
 
+  const handleRemoveIngredient = (ingId) => {
+    setFormData((prev) => ({
+      ...prev,
+      ingredientIds: prev.ingredientIds.filter((item) => item !== ingId),
+    }));
+  };
+
   const handleQuantityChange = (ingId, val) => {
     setIngredientQuantities((prev) => ({
       ...prev,
@@ -184,21 +201,28 @@ export default function DishForm({ isEdit = false }) {
     }));
   };
 
-  const getTagCount = (tag) => {
-    if (tag === "Tất cả") return ingredients.length;
-    if (tag === "Đã chọn") return formData.ingredientIds.length;
-    return ingredients.filter(
+  // Danh sách nguyên liệu đã chọn (hiển thị ngay trong form)
+  const selectedIngredientsList = formData.ingredientIds
+    .map((ingId) => ingredients.find((i) => i.id === ingId))
+    .filter(Boolean);
+
+  // Danh sách nguyên liệu chưa chọn (hiển thị trong Popup để chọn thêm)
+  const unselectedIngredients = ingredients.filter(
+    (ing) => !formData.ingredientIds.includes(ing.id)
+  );
+
+  const getAvailableTagCount = (tag) => {
+    if (tag === "Tất cả") return unselectedIngredients.length;
+    return unselectedIngredients.filter(
       (i) => getIngredientCategory(i).toLowerCase() === tag.toLowerCase()
     ).length;
   };
 
-  const filteredIngredients = ingredients.filter((ing) => {
+  const filteredAvailableIngredients = unselectedIngredients.filter((ing) => {
     const ingCat = getIngredientCategory(ing);
     const matchesTag =
       selectedIngTag === "Tất cả"
         ? true
-        : selectedIngTag === "Đã chọn"
-        ? formData.ingredientIds.includes(ing.id)
         : ingCat.toLowerCase() === selectedIngTag.toLowerCase();
 
     const q = ingSearch.trim().toLowerCase();
@@ -423,229 +447,270 @@ export default function DishForm({ isEdit = false }) {
               )}
             </div>
 
-            {/* Chọn danh sách nguyên liệu kèm thanh tìm kiếm và lọc theo tag */}
+            {/* Chọn nguyên liệu bằng Popup + Danh sách nguyên liệu đã chọn trong Form */}
             <div className="form-group">
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "8px",
-                  flexWrap: "wrap",
-                  gap: "8px",
-                }}
-              >
+              <div className="ingredient-picker-toolbar">
                 <label className="form-label required" style={{ margin: 0 }}>
                   Danh Sách Nguyên Liệu (Chọn và nhập số lượng):
                 </label>
-                <span
-                  style={{
-                    fontSize: "0.82rem",
-                    fontWeight: "700",
-                    color: formData.ingredientIds.length > 0 ? "var(--burgundy)" : "var(--text-muted)",
-                    background: formData.ingredientIds.length > 0 ? "#FEE2E2" : "#F5F5F4",
-                    padding: "3px 10px",
-                    borderRadius: "12px",
-                    border: formData.ingredientIds.length > 0 ? "1px solid #FECDD3" : "1px solid #E7E5E4",
-                  }}
-                >
-                  Đã chọn: {formData.ingredientIds.length} nguyên liệu
-                </span>
-              </div>
-
-              {/* Thanh tìm kiếm nhỏ và các tag lọc (gia vị, rau, bún, thịt,...) */}
-              <div className="ingredient-filter-box">
-                <div className="ingredient-search-wrapper">
-                  <span className="ingredient-search-icon" aria-hidden="true"><Search className="ui-icon" aria-hidden="true" /></span>
-                  <input
-                    type="text"
-                    value={ingSearch}
-                    onChange={(e) => setIngSearch(e.target.value)}
-                    placeholder="Tìm nhanh nguyên liệu theo tên, đơn vị tính..."
-                    aria-label="Tìm nhanh nguyên liệu"
-                    className="ingredient-search-input"
-                  />
-                  {ingSearch && (
-                    <button
-                      type="button"
-                      className="ingredient-search-clear"
-                      onClick={() => setIngSearch("")}
-                      title="Xóa tìm kiếm"
-                      aria-label="Xóa tìm kiếm nguyên liệu"
-                    >
-                      <X className="ui-icon" aria-hidden="true" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Các tag lọc */}
-                <div className="ingredient-tags-container">
-                  {INGREDIENT_TAGS.map((tag) => {
-                    const count = getTagCount(tag);
-                    const isActive = selectedIngTag === tag;
-                    return (
-                      <button
-                        key={tag}
-                        type="button"
-                        className={`ingredient-tag-btn ${isActive ? "active" : ""}`}
-                        onClick={() => setSelectedIngTag(tag)}
-                      >
-                        <span>{tag}</span>
-                        <span className="tag-count">{count}</span>
-                      </button>
-                    );
-                  })}
-                  {formData.ingredientIds.length > 0 && (
-                    <button
-                      type="button"
-                      className={`ingredient-tag-btn ${selectedIngTag === "Đã chọn" ? "active" : ""}`}
-                      onClick={() =>
-                        setSelectedIngTag(selectedIngTag === "Đã chọn" ? "Tất cả" : "Đã chọn")
-                      }
-                      style={{
-                        borderColor: selectedIngTag === "Đã chọn" ? "var(--burgundy)" : "#FCA5A5",
-                        color: selectedIngTag === "Đã chọn" ? "#fff" : "#991B1B",
-                        backgroundColor:
-                          selectedIngTag === "Đã chọn" ? "var(--burgundy)" : "#FEF2F2",
-                      }}
-                    >
-                      <Check className="ui-icon" aria-hidden="true" /><span>Đã chọn</span>
-                      <span className="tag-count">{formData.ingredientIds.length}</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Lưới hiển thị danh sách nguyên liệu */}
-              <div
-                className="ingredients-checkbox-grid"
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(min(230px, 100%), 1fr))",
-                  gap: "10px",
-                  maxHeight: "320px",
-                  overflowY: "auto",
-                  padding: "12px",
-                  background: "var(--cream)",
-                  border: "2px solid #E7E5E4",
-                  borderRadius: "var(--radius-sm)",
-                }}
-              >
-                {filteredIngredients.length > 0 ? (
-                  filteredIngredients.map((ing) => {
-                    const isChecked = formData.ingredientIds.includes(ing.id);
-                    const ingCategory = getIngredientCategory(ing);
-                    return (
-                      <div
-                        key={ing.id}
-                        className={`ingredient-select-card ${isChecked ? "selected" : ""}`}
-                      >
-                        <label className="ingredient-select-header">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => handleIngredientToggle(ing.id)}
-                            style={{
-                              width: "16px",
-                              height: "16px",
-                              accentColor: "var(--burgundy)",
-                              margin: 0,
-                              cursor: "pointer",
-                            }}
-                          />
-                          <span className="ingredient-name">
-                            <strong>{ing.name}</strong>
-                          </span>
-                          <span
-                            className={getCategoryBadgeClass(ingCategory)}
-                            style={{ fontSize: "0.7rem", padding: "1px 6px" }}
-                          >
-                            {ingCategory}
-                          </span>
-                        </label>
-
-                        {/* Ô nhập số lượng & đơn vị tùy chỉnh (không có mũi tên, không bị kẹt số 1) */}
-                        {isChecked && (
-                          <div className="ingredient-qty-box">
-                            <label htmlFor={`ingredient-quantity-${ing.id}`}>Số lượng:</label>
-                            <input
-                              id={`ingredient-quantity-${ing.id}`}
-                              aria-label={`Số lượng ${ing.name}`}
-                              type="text"
-                              inputMode="numeric"
-                              value={
-                                ingredientQuantities[ing.id] !== undefined
-                                  ? ingredientQuantities[ing.id]
-                                  : "1"
-                              }
-                              onChange={(e) => handleQuantityChange(ing.id, e.target.value)}
-                              className="ingredient-qty-input"
-                              placeholder="1"
-                            />
-                            <input
-                              aria-label={`Đơn vị ${ing.name}`}
-                              type="text"
-                              value={
-                                ingredientUnits[ing.id] !== undefined
-                                  ? ingredientUnits[ing.id]
-                                  : ing.unit || ""
-                              }
-                              onChange={(e) => handleUnitChange(ing.id, e.target.value)}
-                              className="ingredient-unit-input"
-                              placeholder="Đơn vị"
-                              title="Tùy chỉnh đơn vị cho món ăn (ví dụ: gam, thìa, bó...)"
-                            />
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })
-                ) : (
-                  <div
-                    style={{
-                      gridColumn: "1 / -1",
-                      textAlign: "center",
-                      padding: "24px 12px",
-                      color: "var(--text-muted)",
-                      fontSize: "0.88rem",
-                    }}
+                <div className="ingredient-picker-toolbar__actions">
+                  <span
+                    className={`ingredient-selected-badge ${
+                      formData.ingredientIds.length > 0 ? "has-items" : ""
+                    }`}
                   >
-                    <p style={{ margin: "0 0 10px 0" }}>
-                      Không có nguyên liệu nào phù hợp với bộ lọc hiện tại.
-                    </p>
-                    {(ingSearch || selectedIngTag !== "Tất cả") && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIngSearch("");
-                          setSelectedIngTag("Tất cả");
-                        }}
-                        style={{
-                          background: "#fff",
-                          border: "1px solid #D6D3D1",
-                          borderRadius: "4px",
-                          padding: "5px 12px",
-                          fontSize: "0.82rem",
-                          cursor: "pointer",
-                          color: "var(--charcoal)",
-                          fontWeight: "600",
-                        }}
-                      >
-                        <RotateCcw className="ui-icon" aria-hidden="true" /> Đặt lại tìm kiếm & tag
-                      </button>
-                    )}
+                    Đã chọn: {formData.ingredientIds.length} nguyên liệu
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn--primary ingredient-open-popup-btn"
+                    onClick={() => setIngPopupOpen(true)}
+                  >
+                    <Plus className="ui-icon" aria-hidden="true" /> Chọn thêm nguyên liệu
+                  </button>
+                </div>
+              </div>
+
+              {/* Khu vực hiển thị các nguyên liệu ĐÃ CHỌN ngay trong Form */}
+              <div className="selected-ingredients-box">
+                {selectedIngredientsList.length === 0 ? (
+                  <div className="selected-ingredients-empty">
+                    <p>Chưa có nguyên liệu nào được chọn cho món ăn này.</p>
+                    <button
+                      type="button"
+                      className="btn btn--outline"
+                      onClick={() => setIngPopupOpen(true)}
+                    >
+                      <Plus className="ui-icon" aria-hidden="true" /> Mở danh sách chọn nguyên liệu
+                    </button>
+                  </div>
+                ) : (
+                  <div className="selected-ingredients-list">
+                    {selectedIngredientsList.map((ing) => {
+                      const ingCategory = getIngredientCategory(ing);
+                      return (
+                        <div key={ing.id} className="selected-ingredient-row">
+                          <div className="selected-ingredient-info">
+                            <span className="ingredient-name" title={ing.name}>
+                              <strong>{ing.name}</strong>
+                            </span>
+                            <span className={getCategoryBadgeClass(ingCategory)}>
+                              {ingCategory}
+                            </span>
+                          </div>
+
+                          <div className="selected-ingredient-controls">
+                            <div className="selected-ingredient-field">
+                              <label htmlFor={`ingredient-quantity-${ing.id}`}>Số lượng:</label>
+                              <input
+                                id={`ingredient-quantity-${ing.id}`}
+                                aria-label={`Số lượng ${ing.name}`}
+                                type="text"
+                                inputMode="numeric"
+                                value={
+                                  ingredientQuantities[ing.id] !== undefined
+                                    ? ingredientQuantities[ing.id]
+                                    : "1"
+                                }
+                                onChange={(e) => handleQuantityChange(ing.id, e.target.value)}
+                                className="ingredient-qty-input"
+                                placeholder="1"
+                              />
+                            </div>
+
+                            <div className="selected-ingredient-field">
+                              <label htmlFor={`ingredient-unit-${ing.id}`}>Đơn vị:</label>
+                              <input
+                                id={`ingredient-unit-${ing.id}`}
+                                aria-label={`Đơn vị ${ing.name}`}
+                                type="text"
+                                value={
+                                  ingredientUnits[ing.id] !== undefined
+                                    ? ingredientUnits[ing.id]
+                                    : ing.unit || ""
+                                }
+                                onChange={(e) => handleUnitChange(ing.id, e.target.value)}
+                                className="ingredient-unit-input"
+                                placeholder="Đơn vị"
+                                title="Tùy chỉnh đơn vị cho món ăn (ví dụ: gam, thìa, bó...)"
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              className="ingredient-remove-btn"
+                              onClick={() => handleRemoveIngredient(ing.id)}
+                              title="Xóa nguyên liệu này và trả về danh sách chọn"
+                              aria-label={`Bỏ chọn ${ing.name}`}
+                            >
+                              <X className="ui-icon" aria-hidden="true" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
+
+              {/* POPUP CHỌN NGUYÊN LIỆU */}
+              {ingPopupOpen && (
+                <div
+                  className="ingredient-modal-backdrop"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="ingredient-modal-title"
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) setIngPopupOpen(false);
+                  }}
+                >
+                  <div className="ingredient-modal-panel">
+                    <div className="ingredient-modal-header">
+                      <div>
+                        <h3 id="ingredient-modal-title" className="ingredient-modal-title">
+                          Chọn Nguyên Liệu Cho Món Ăn
+                        </h3>
+                        <p className="ingredient-modal-subtitle">
+                          Bấm vào nguyên liệu để thêm ngay vào biểu mẫu ({unselectedIngredients.length} nguyên liệu có sẵn)
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="ingredient-modal-close"
+                        onClick={() => setIngPopupOpen(false)}
+                        aria-label="Đóng bảng chọn nguyên liệu"
+                      >
+                        <X className="ui-icon" aria-hidden="true" />
+                      </button>
+                    </div>
+
+                    <div className="ingredient-modal-filters">
+                      <div className="ingredient-search-wrapper">
+                        <span className="ingredient-search-icon" aria-hidden="true">
+                          <Search className="ui-icon" aria-hidden="true" />
+                        </span>
+                        <input
+                          type="text"
+                          value={ingSearch}
+                          onChange={(e) => setIngSearch(e.target.value)}
+                          placeholder="Tìm nhanh nguyên liệu theo tên, đơn vị tính..."
+                          aria-label="Tìm nhanh nguyên liệu"
+                          className="ingredient-search-input"
+                        />
+                        {ingSearch && (
+                          <button
+                            type="button"
+                            className="ingredient-search-clear"
+                            onClick={() => setIngSearch("")}
+                            title="Xóa tìm kiếm"
+                            aria-label="Xóa tìm kiếm nguyên liệu"
+                          >
+                            <X className="ui-icon" aria-hidden="true" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="ingredient-tags-container">
+                        {INGREDIENT_TAGS.map((tag) => {
+                          const count = getAvailableTagCount(tag);
+                          const isActive = selectedIngTag === tag;
+                          return (
+                            <button
+                              key={tag}
+                              type="button"
+                              className={`ingredient-tag-btn ${isActive ? "active" : ""}`}
+                              onClick={() => setSelectedIngTag(tag)}
+                            >
+                              <span>{tag}</span>
+                              <span className="tag-count">{count}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="ingredient-modal-body">
+                      {filteredAvailableIngredients.length > 0 ? (
+                        <div className="ingredient-popup-grid">
+                          {filteredAvailableIngredients.map((ing) => {
+                            const ingCategory = getIngredientCategory(ing);
+                            return (
+                              <button
+                                key={ing.id}
+                                type="button"
+                                className="ingredient-popup-item"
+                                onClick={() => handleAddIngredient(ing.id)}
+                                title={`Chọn ${ing.name}`}
+                              >
+                                <span className="ingredient-popup-item__left">
+                                  <Plus className="ui-icon ingredient-popup-item__icon" aria-hidden="true" />
+                                  <span className="ingredient-name">
+                                    <strong>{ing.name}</strong>
+                                  </span>
+                                </span>
+                                <span className="ingredient-popup-item__right">
+                                  {ing.unit && (
+                                    <span className="ingredient-popup-item__unit">({ing.unit})</span>
+                                  )}
+                                  <span className={getCategoryBadgeClass(ingCategory)}>
+                                    {ingCategory}
+                                  </span>
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="ingredient-modal-empty">
+                          {unselectedIngredients.length === 0 ? (
+                            <p>Tất cả nguyên liệu đã được thêm vào món ăn!</p>
+                          ) : (
+                            <>
+                              <p>Không có nguyên liệu nào phù hợp với bộ lọc hiện tại.</p>
+                              {(ingSearch || selectedIngTag !== "Tất cả") && (
+                                <button
+                                  type="button"
+                                  className="btn btn--outline"
+                                  onClick={() => {
+                                    setIngSearch("");
+                                    setSelectedIngTag("Tất cả");
+                                  }}
+                                >
+                                  <RotateCcw className="ui-icon" aria-hidden="true" /> Đặt lại tìm kiếm & tag
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="ingredient-modal-footer">
+                      <span className="ingredient-modal-footer__status">
+                        <Check className="ui-icon" aria-hidden="true" /> Đã chọn{" "}
+                        <strong>{formData.ingredientIds.length}</strong> nguyên liệu trong biểu mẫu
+                      </span>
+                      <button
+                        type="button"
+                        className="btn btn--primary"
+                        onClick={() => setIngPopupOpen(false)}
+                      >
+                        Xong ({formData.ingredientIds.length})
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <small
                 style={{
                   color: "var(--text-muted)",
                   fontSize: "0.8rem",
-                  marginTop: "4px",
+                  marginTop: "6px",
                   display: "block",
                 }}
               >
-                Tích chọn nguyên liệu và điền số lượng cần cho món ăn.
+                Bấm &ldquo;Chọn thêm nguyên liệu&rdquo; để mở danh sách chọn, sau đó điều chỉnh số lượng hoặc bấm dấu X để bỏ nguyên liệu.
               </small>
               {fieldErrors.ingredientIds && (
                 <div className="field-error">
