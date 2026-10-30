@@ -2,7 +2,8 @@ import { ArrowDown, ArrowRight, Search, X } from "lucide-react";
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { dishApi } from "../../apiClient";
-import { ErrorAlert, LoadingSpinner } from "../../components/StateViews";
+import { buildDishSearchParams } from "../../utils/search";
+import { DishListSkeleton, ErrorAlert } from "../../components/StateViews";
 
 const categories = [
   "Khai Vị",
@@ -15,12 +16,6 @@ const categories = [
   "Đồ Uống",
 ];
 const pageSizes = [10, 20, 50];
-const searchModeDescriptions = {
-  basic: "Tên món chứa từ khóa.",
-  advanced: "Kết hợp từ khóa, danh mục, khoảng giá, còn bán.",
-  fulltext: "Tìm các từ trong tên và mô tả, không cần liền nhau.",
-  fuzzy: "Tìm tên món giống từ khóa, chịu được gõ sai nhẹ.",
-};
 
 function setOptional(params, key, value) {
   if (value) params.set(key, value);
@@ -99,7 +94,6 @@ function DishCards({ dishes }) {
 export default function DishList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [draft, setDraft] = useState({
-    mode: "basic",
     q: "",
     category: "",
     minPrice: "",
@@ -123,9 +117,6 @@ export default function DishList() {
   const view = ["pages", "load-more", "infinite"].includes(appliedParams.get("view"))
     ? appliedParams.get("view")
     : "pages";
-  const mode =
-    appliedParams.get("mode") ||
-    (appliedParams.has("category") || appliedParams.has("status") ? "advanced" : "basic");
   const activeCategory = appliedParams.get("category") || "";
   const page = appliedParams.get("page") || "1";
   const pageSize = appliedParams.get("pageSize") || "10";
@@ -139,40 +130,18 @@ export default function DishList() {
 
   useEffect(() => {
     setDraft({
-      mode:
-        appliedParams.get("mode") ||
-        (appliedParams.has("category") || appliedParams.has("status") ? "advanced" : "basic"),
       q: appliedParams.get("q") || "",
       category: appliedParams.get("category") || "",
       minPrice: appliedParams.get("minPrice") || "",
       maxPrice: appliedParams.get("maxPrice") || "",
-      available: appliedParams.get("available") || "",
+      available: appliedParams.get("available") ||
+        (appliedParams.get("status") === "available" ? "true" : appliedParams.get("status") === "unavailable" ? "false" : ""),
       sort: appliedParams.get("sort") || "id_asc",
     });
   }, [paramsText, appliedParams]);
 
   const requestParams = useCallback(
-    (requestPage) => {
-      const query = new URLSearchParams(paramsText);
-      const result = {
-        mode: query.get("mode") || (query.has("category") || query.has("status") ? "advanced" : "basic"),
-        page: requestPage,
-        pageSize: query.get("pageSize") || "10",
-        sort: query.get("sort") || "id_asc",
-      };
-      const q = query.get("q");
-      if (q !== null) result.q = q;
-      if (result.mode === "advanced") {
-        ["category", "minPrice", "maxPrice", "available"].forEach((key) => {
-          const value = query.get(key);
-          if (value !== null) result[key] = value;
-        });
-        if (!query.has("available") && query.get("status")) {
-          result.available = query.get("status") === "available" ? "true" : "false";
-        }
-      }
-      return result;
-    },
+    (requestPage) => buildDishSearchParams(new URLSearchParams(paramsText), "fuzzy", requestPage),
     [paramsText],
   );
 
@@ -296,6 +265,8 @@ export default function DishList() {
 
   const changeUrl = (updates, clearKeys = []) => {
     const params = new URLSearchParams(searchParams);
+    params.set("mode", "advanced");
+    params.set("match", "fuzzy");
     clearKeys.forEach((key) => params.delete(key));
     Object.entries(updates).forEach(([key, value]) => setOptional(params, key, String(value)));
     params.set("page", "1");
@@ -304,9 +275,10 @@ export default function DishList() {
 
   const handleCategoryQuickFilter = (categoryValue) => {
     const params = new URLSearchParams(searchParams);
+    params.set("mode", "advanced");
+    params.set("match", "fuzzy");
     const nextCat = categoryValue === activeCategory ? "" : categoryValue;
     if (nextCat) {
-      params.set("mode", "advanced");
       params.set("category", nextCat);
     } else {
       params.delete("category");
@@ -319,16 +291,14 @@ export default function DishList() {
   const handleSubmit = (event) => {
     event.preventDefault();
     const params = new URLSearchParams(searchParams);
-    params.set("mode", draft.mode);
+    params.set("mode", "advanced");
+    params.set("match", "fuzzy");
+    params.delete("status");
     setOptional(params, "q", draft.q.trim());
     setOptional(params, "sort", draft.sort);
-    if (draft.mode === "advanced") {
-      ["category", "minPrice", "maxPrice", "available"].forEach((key) =>
-        setOptional(params, key, draft[key].trim()),
-      );
-    } else {
-      ["category", "minPrice", "maxPrice", "available"].forEach((key) => params.delete(key));
-    }
+    ["category", "minPrice", "maxPrice", "available"].forEach((key) =>
+      setOptional(params, key, draft[key].trim()),
+    );
     params.set("page", "1");
     setSearchParams(params);
     setSearchEpoch((epoch) => epoch + 1);
@@ -336,7 +306,6 @@ export default function DishList() {
 
   const clearConditions = () => {
     setDraft({
-      mode: "basic",
       q: "",
       category: "",
       minPrice: "",
@@ -345,6 +314,8 @@ export default function DishList() {
       sort: "id_asc",
     });
     const params = new URLSearchParams();
+    params.set("mode", "advanced");
+    params.set("match", "fuzzy");
     params.set("view", view);
     params.set("pageSize", pageSize);
     params.set("page", "1");
@@ -356,6 +327,8 @@ export default function DishList() {
   const handleView = (value) => changeUrl({ view: value });
   const handlePage = (value) => {
     const params = new URLSearchParams(searchParams);
+    params.set("mode", "advanced");
+    params.set("match", "fuzzy");
     params.set("page", String(value));
     setSearchParams(params);
   };
@@ -374,7 +347,7 @@ export default function DishList() {
   const visiblePages = [...new Set([...(pageCount > 5 ? [1] : []), ...pageWindow, ...(pageCount > 5 ? [pageCount] : [])])];
   const shownDishes = view === "pages" ? pageData?.items || [] : items;
   const resultTotal = view === "pages" ? pageData?.total : incrementalTotal;
-  const advanced = draft.mode === "advanced";
+  const skeletonCount = pageSizes.includes(Number(pageSize)) ? Number(pageSize) : 10;
 
   return (
     <>
@@ -472,23 +445,7 @@ export default function DishList() {
 
             {/* 3. Form tìm kiếm và lọc chi tiết */}
             <form className="dish-search-form" onSubmit={handleSubmit}>
-              <div className="dish-search-primary-fields">
-                <div className="dish-form-field">
-                  <label htmlFor="dish-search-mode">Kiểu tìm kiếm</label>
-                  <select
-                    id="dish-search-mode"
-                    value={draft.mode}
-                    onChange={(event) =>
-                      setDraft((current) => ({ ...current, mode: event.target.value }))
-                    }
-                  >
-                    <option value="basic">Cơ bản</option>
-                    <option value="advanced">Nâng cao</option>
-                    <option value="fulltext">Toàn văn</option>
-                    <option value="fuzzy">Gần đúng (fuzzy)</option>
-                  </select>
-                </div>
-
+              <div className="dish-search-primary-fields dish-search-primary-fields--fixed">
                 <div className="dish-form-field dish-form-field--query">
                   <label htmlFor="dish-search-query">Từ khóa</label>
                   <input
@@ -499,11 +456,7 @@ export default function DishList() {
                     onChange={(event) =>
                       setDraft((current) => ({ ...current, q: event.target.value }))
                     }
-                    placeholder={
-                      draft.mode === "fulltext"
-                        ? "Tên món hoặc từ trong mô tả"
-                        : "Tìm theo tên món (ví dụ: Phở, Bún chả...)"
-                    }
+                    placeholder="Tìm món ăn hoặc nguyên liệu..."
                   />
                 </div>
 
@@ -512,7 +465,7 @@ export default function DishList() {
                   <select
                     id="dish-search-sort"
                     value={draft.sort}
-                    disabled={draft.mode === "fulltext" || draft.mode === "fuzzy"}
+                    disabled={Boolean(draft.q.trim())}
                     onChange={(event) =>
                       setDraft((current) => ({ ...current, sort: event.target.value }))
                     }
@@ -541,25 +494,8 @@ export default function DishList() {
                 </div>
               </div>
 
-              {advanced && (
+              {(
                 <div className="dish-search-advanced-fields">
-                  <div className="dish-form-field">
-                    <label htmlFor="dish-search-category">Danh mục</label>
-                    <select
-                      id="dish-search-category"
-                      value={draft.category}
-                      onChange={(event) =>
-                        setDraft((current) => ({ ...current, category: event.target.value }))
-                      }
-                    >
-                      <option value="">Tất cả</option>
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                   <div className="dish-form-field">
                     <label htmlFor="dish-min-price">Giá từ</label>
                     <input
@@ -602,12 +538,6 @@ export default function DishList() {
               )}
 
               <div className="dish-search-footer">
-                <div className="dish-search-help-row" aria-live="polite">
-                  <p>{searchModeDescriptions[draft.mode]}</p>
-                  {(draft.mode === "fulltext" || draft.mode === "fuzzy") && (
-                    <p><strong>Xếp theo độ phù hợp.</strong></p>
-                  )}
-                </div>
                 <div className="dish-search-actions">
                   <button className="btn btn--primary" type="submit">
                     <Search className="ui-icon" aria-hidden="true" /> Tìm kiếm
@@ -620,13 +550,7 @@ export default function DishList() {
             </form>
           </div>
 
-          {mode === "fuzzy" && (
-            <p className="dish-search-note">
-              Tìm gần đúng dùng độ tương đồng toàn tên món; ngưỡng là 0.3.
-            </p>
-          )}
-
-          {view === "pages" && pageLoading && <LoadingSpinner />}
+          {view === "pages" && pageLoading && <DishListSkeleton count={skeletonCount} />}
           {view === "pages" && !pageLoading && pageError && (
             <ErrorAlert error={pageError} onRetry={retryPage} />
           )}
@@ -639,14 +563,19 @@ export default function DishList() {
             </div>
           )}
 
-          {view !== "pages" && pending && items.length === 0 && <LoadingSpinner />}
-          {!pageLoading && !pageError && resultTotal === 0 && (
+          {resultTotal === 0 && (view === "pages" ? !pageLoading && !pageError : !pending && !incrementalError) && (
             <div className="dish-empty-state">Không tìm thấy món ăn phù hợp với điều kiện đã chọn.</div>
           )}
           {shownDishes.length > 0 &&
             (view !== "pages" || (!pageLoading && !pageError)) && (
               <DishCards dishes={shownDishes} />
             )}
+          {view !== "pages" && pending && (
+            <DishListSkeleton
+              count={incrementalTotal === null ? skeletonCount : Math.min(skeletonCount, Math.max(1, incrementalTotal - items.length))}
+              message={items.length > 0 ? "Đang tải thêm món ăn…" : "Đang tải danh sách món ăn…"}
+            />
+          )}
 
           {view === "pages" && !pageLoading && !pageError && pageData && pageCount > 0 && (
             <nav className="dish-pagination" aria-label="Phân trang món ăn">

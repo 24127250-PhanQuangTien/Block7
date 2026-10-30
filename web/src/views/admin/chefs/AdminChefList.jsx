@@ -2,7 +2,7 @@ import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { chefApi } from "../../../apiClient";
-import { LoadingSpinner, ErrorAlert } from "../../../components/StateViews";
+import { LoadingSkeleton, ErrorAlert } from "../../../components/StateViews";
 
 export default function AdminChefList() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -73,7 +73,7 @@ export default function AdminChefList() {
                 name="q"
                 value={searchQ}
                 onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="Tìm theo tên đầu bếp hoặc chuyên môn..."
+                placeholder="Nhập một phần tên đầu bếp..."
                 className="admin-filter-input"
               />
             </div>
@@ -95,7 +95,7 @@ export default function AdminChefList() {
         </div>
 
         {/* Trạng thái Loading */}
-        {loading && <LoadingSpinner />}
+        {loading && <LoadingSkeleton variant="table" />}
 
         {/* Trạng thái Lỗi */}
         {!loading && error && <ErrorAlert error={error} onRetry={fetchChefs} />}

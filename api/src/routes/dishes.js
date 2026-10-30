@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const prisma = require("../prisma");
 const { Prisma } = require("@prisma/client");
+const { dishFuzzyScoreSql, dishFulltextDocumentSql, normalizeSearchSql, FUZZY_SIMILARITY_THRESHOLD } = require("../search");
 const { parseValidId, validateDish } = require("../validation");
 
 // GET /api/dishes - Tìm kiếm, lọc và phân trang món ăn ở database.
@@ -58,6 +59,7 @@ router.get("/", async (req, res, next) => {
             ? "false"
             : undefined;
     const modeValue = readString("mode");
+    const matchValue = readString("match");
     const mode =
       modeValue === undefined
         ? category || legacyStatus
@@ -66,6 +68,7 @@ router.get("/", async (req, res, next) => {
         : modeValue;
     const sortValue = readString("sort");
     const sort = sortValue === undefined ? "id_asc" : sortValue;
+    const match = matchValue || (mode === "fulltext" || mode === "fuzzy" ? mode : "literal");
     const pageSize = parsePositiveInteger("pageSize", 10, 100);
     const page = parsePositiveInteger("page", 1, Math.floor(Number.MAX_SAFE_INTEGER / pageSize));
     const price = (key, value) => {
@@ -81,6 +84,7 @@ router.get("/", async (req, res, next) => {
     const maxPrice = price("maxPrice", maxPriceText);
 
     if (!modes.includes(mode)) errors.mode = "Chế độ tìm kiếm không được hỗ trợ";
+    if (!["literal", "fulltext", "fuzzy"].includes(match)) errors.match = "Quy tắc tìm kiếm không được hỗ trợ";
     if (!sorts.includes(sort)) errors.sort = "Kiểu sắp xếp không được hỗ trợ";
     if (category && !categories.includes(category)) errors.category = "Danh mục không được hỗ trợ";
     if (
@@ -93,6 +97,7 @@ router.get("/", async (req, res, next) => {
     }
     if (
       availableText !== undefined &&
+      availableText !== "" &&
       availableText !== "true" &&
       availableText !== "false"
     ) {
@@ -119,20 +124,31 @@ router.get("/", async (req, res, next) => {
     const escapeLikeLiteral = (text) =>
       `%${text.replace(/!/g, "!!").replace(/%/g, "!%").replace(/_/g, "!_")}%`;
     const predicates = [];
-    if (mode === "basic" && q) {
-      predicates.push(Prisma.sql`d.name ILIKE ${escapeLikeLiteral(q)} ESCAPE '!'`);
-    } else if (mode === "advanced") {
-      if (q) predicates.push(Prisma.sql`d.name ILIKE ${escapeLikeLiteral(q)} ESCAPE '!'`);
+    const fuzzyScore = dishFuzzyScoreSql(q);
+    const fulltextDocument = dishFulltextDocumentSql();
+    const fulltextQuery = Prisma.sql`plainto_tsquery('simple', ${normalizeSearchSql(q)})`;
+    if (q)
+    {
+      if (match === "fulltext")
+      {
+        predicates.push(Prisma.sql`${fulltextDocument} @@ ${fulltextQuery}`);
+      }
+      else if (match === "fuzzy")
+      {
+        predicates.push(Prisma.sql`${fuzzyScore} >= ${FUZZY_SIMILARITY_THRESHOLD}`);
+      }
+      else
+      {
+        predicates.push(Prisma.sql`d.name ILIKE ${escapeLikeLiteral(q)} ESCAPE '!'`);
+      }
+    }
+    if (mode === "advanced") {
       if (category) predicates.push(Prisma.sql`d.category = ${category}`);
       if (minPrice !== null) predicates.push(Prisma.sql`d.price >= ${minPrice}`);
       if (maxPrice !== null) predicates.push(Prisma.sql`d.price <= ${maxPrice}`);
       if (availableText !== undefined && availableText !== "") {
         predicates.push(Prisma.sql`d.available = ${availableText === "true"}`);
       }
-    } else if (mode === "fulltext") {
-      predicates.push(Prisma.sql`to_tsvector('simple', coalesce(d.name, '') || ' ' || coalesce(d.description, '')) @@ plainto_tsquery('simple', ${q})`);
-    } else if (mode === "fuzzy") {
-      predicates.push(Prisma.sql`similarity(d.name, ${q}) >= ${FUZZY_SIMILARITY_THRESHOLD}`);
     }
     const where = predicates.length
       ? Prisma.sql`WHERE ${Prisma.join(predicates, " AND ")}`
@@ -145,10 +161,10 @@ router.get("/", async (req, res, next) => {
       price_asc: Prisma.sql`d.price ASC, d.id ASC`,
       price_desc: Prisma.sql`d.price DESC, d.id ASC`,
     };
-    const selected = mode === "fulltext"
-      ? Prisma.sql`SELECT d.id, ts_rank(to_tsvector('simple', coalesce(d.name, '') || ' ' || coalesce(d.description, '')), plainto_tsquery('simple', ${q})) AS "searchScore" FROM dishes d ${where} ORDER BY "searchScore" DESC, d.id ASC LIMIT ${pageSize} OFFSET ${offset}`
-      : mode === "fuzzy"
-        ? Prisma.sql`SELECT d.id, similarity(d.name, ${q}) AS "searchScore" FROM dishes d ${where} ORDER BY "searchScore" DESC, d.id ASC LIMIT ${pageSize} OFFSET ${offset}`
+    const selected = q && match === "fulltext"
+      ? Prisma.sql`SELECT d.id, ts_rank(${fulltextDocument}, ${fulltextQuery}) AS "searchScore" FROM dishes d ${where} ORDER BY "searchScore" DESC, d.id ASC LIMIT ${pageSize} OFFSET ${offset}`
+      : q && match === "fuzzy"
+        ? Prisma.sql`SELECT d.id, ${fuzzyScore} AS "searchScore" FROM dishes d ${where} ORDER BY "searchScore" DESC, d.id ASC LIMIT ${pageSize} OFFSET ${offset}`
         : Prisma.sql`SELECT d.id FROM dishes d ${where} ORDER BY ${orderBy[sort]} LIMIT ${pageSize} OFFSET ${offset}`;
     const [countRows, selectedRows] = await Promise.all([
       prisma.$queryRaw(Prisma.sql`SELECT COUNT(*)::int AS total FROM dishes d ${where}`),
@@ -176,8 +192,6 @@ router.get("/", async (req, res, next) => {
     next(error);
   }
 });
-
-const FUZZY_SIMILARITY_THRESHOLD = 0.3;
 
 // 2. GET /api/dishes/:id - Xem chi tiết một món ăn
 router.get("/:id", async (req, res, next) => {

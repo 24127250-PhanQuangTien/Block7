@@ -7,6 +7,7 @@ export const INGREDIENT_TAGS = [
   "Bún",
   "Thịt",
   "Hải sản",
+  "Khác",
 ];
 
 export const ALL_INGREDIENT_CATEGORIES = [
@@ -19,6 +20,11 @@ export const ALL_INGREDIENT_CATEGORIES = [
 ];
 
 export function getIngredientCategory(ing) {
+  // Hiển thị đúng phân loại đã lưu để khớp với bộ lọc tại server.
+  if (ing && Object.prototype.hasOwnProperty.call(ing, "category"))
+  {
+    return ing.category || "Khác";
+  }
   if (ing && ing.category && ing.category !== "Khác") {
     return ing.category;
   }

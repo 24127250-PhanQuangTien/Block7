@@ -1,8 +1,9 @@
 import { Eye, Pencil, Plus, Search, Trash2, X } from "lucide-react";
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { dishApi } from "../../../apiClient";
-import { ErrorAlert, LoadingSpinner } from "../../../components/StateViews";
+import { buildDishSearchParams } from "../../../utils/search";
+import { ErrorAlert, LoadingSkeleton } from "../../../components/StateViews";
 
 const categories = [
   "Khai Vị",
@@ -15,12 +16,6 @@ const categories = [
   "Đồ Uống",
 ];
 const pageSizes = [10, 20, 50];
-const searchModeDescriptions = {
-  basic: "Tên món chứa từ khóa.",
-  advanced: "Kết hợp từ khóa, danh mục, khoảng giá, còn bán.",
-  fulltext: "Tìm các từ trong tên và mô tả, không cần liền nhau.",
-  fuzzy: "Tìm tên món giống từ khóa, chịu được gõ sai nhẹ.",
-};
 
 function setOptional(params, key, value) {
   if (value) params.set(key, value);
@@ -30,7 +25,6 @@ function setOptional(params, key, value) {
 export default function AdminDishList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [draft, setDraft] = useState({
-    mode: "basic",
     q: "",
     category: "",
     minPrice: "",
@@ -42,37 +36,14 @@ export default function AdminDishList() {
   const [pageData, setPageData] = useState(null);
   const [pageLoading, setPageLoading] = useState(true);
   const [pageError, setPageError] = useState(null);
-  const [items, setItems] = useState([]);
-  const [incrementalTotal, setIncrementalTotal] = useState(null);
-  const [nextPage, setNextPage] = useState(1);
-  const [pending, setPending] = useState(false);
-  const [incrementalEnd, setIncrementalEnd] = useState(false);
-  const [incrementalError, setIncrementalError] = useState(null);
-
   const paramsText = searchParams.toString();
   const appliedParams = useMemo(() => new URLSearchParams(paramsText), [paramsText]);
-  const view = ["pages", "load-more", "infinite"].includes(appliedParams.get("view"))
-    ? appliedParams.get("view")
-    : "pages";
-  const mode =
-    appliedParams.get("mode") ||
-    (appliedParams.has("category") || appliedParams.has("status") ? "advanced" : "basic");
   const activeCategory = appliedParams.get("category") || "";
   const page = appliedParams.get("page") || "1";
   const pageSize = appliedParams.get("pageSize") || "10";
   const currentPage = Math.max(1, Number(page) || 1);
-  const sentinelRef = useRef(null);
-  const pendingRef = useRef(false);
-  const endRef = useRef(false);
-  const controllerRef = useRef(null);
-  const generationRef = useRef(0);
-  const incrementalKeyRef = useRef("");
-
   useEffect(() => {
     setDraft({
-      mode:
-        appliedParams.get("mode") ||
-        (appliedParams.has("category") || appliedParams.has("status") ? "advanced" : "basic"),
       q: appliedParams.get("q") || "",
       category: appliedParams.get("category") || "",
       minPrice: appliedParams.get("minPrice") || "",
@@ -89,27 +60,7 @@ export default function AdminDishList() {
   }, [paramsText, appliedParams]);
 
   const requestParams = useCallback(
-    (requestPage) => {
-      const query = new URLSearchParams(paramsText);
-      const result = {
-        mode: query.get("mode") || (query.has("category") || query.has("status") ? "advanced" : "basic"),
-        page: requestPage,
-        pageSize: query.get("pageSize") || "10",
-        sort: query.get("sort") || "id_asc",
-      };
-      const q = query.get("q");
-      if (q !== null) result.q = q;
-      if (result.mode === "advanced") {
-        ["category", "minPrice", "maxPrice", "available"].forEach((key) => {
-          const value = query.get(key);
-          if (value !== null) result[key] = value;
-        });
-        if (!query.has("available") && query.get("status")) {
-          result.available = query.get("status") === "available" ? "true" : "false";
-        }
-      }
-      return result;
-    },
+    (requestPage) => buildDishSearchParams(new URLSearchParams(paramsText), "fulltext", requestPage),
     [paramsText],
   );
 
@@ -119,7 +70,6 @@ export default function AdminDishList() {
   );
 
   useEffect(() => {
-    if (view !== "pages") return undefined;
     const controller = new AbortController();
     let active = true;
     setPageData(null);
@@ -139,100 +89,13 @@ export default function AdminDishList() {
       active = false;
       controller.abort();
     };
-  }, [pageRequest, paramsText, searchEpoch, view]);
-
-  const incrementalKey = useMemo(() => {
-    const query = new URLSearchParams(paramsText);
-    query.delete("page");
-    query.delete("view");
-    return `${view}:${query.toString()}`;
-  }, [paramsText, view]);
-
-  useLayoutEffect(() => {
-    generationRef.current += 1;
-    controllerRef.current?.abort();
-    pendingRef.current = false;
-    endRef.current = false;
-    incrementalKeyRef.current = incrementalKey;
-    setItems([]);
-    setIncrementalTotal(null);
-    setNextPage(1);
-    setPending(false);
-    setIncrementalEnd(false);
-    setIncrementalError(null);
-    return () => {
-      generationRef.current += 1;
-      controllerRef.current?.abort();
-    };
-  }, [incrementalKey, searchEpoch]);
-
-  const loadNext = useCallback(async () => {
-    if (pendingRef.current || endRef.current) return;
-    pendingRef.current = true;
-    setPending(true);
-    setIncrementalError(null);
-    const generation = generationRef.current;
-    const requestPage = nextPage;
-    const controller = new AbortController();
-    controllerRef.current = controller;
-
-    try {
-      const data = await dishApi.listPage(
-        requestParams(requestPage),
-        controller.signal,
-      );
-      if (
-        generation !== generationRef.current ||
-        incrementalKey !== incrementalKeyRef.current
-      ) {
-        return;
-      }
-      setItems((current) => [...current, ...data.items]);
-      setIncrementalTotal(data.total);
-      setNextPage(data.page + 1);
-      const reachedEnd = data.page * data.pageSize >= data.total || data.items.length === 0;
-      endRef.current = reachedEnd;
-      setIncrementalEnd(reachedEnd);
-    } catch (error) {
-      if (generation === generationRef.current && error.name !== "AbortError") {
-        setIncrementalError(error);
-      }
-    } finally {
-      if (generation === generationRef.current) {
-        pendingRef.current = false;
-        setPending(false);
-      }
-    }
-  }, [incrementalKey, nextPage, requestParams]);
-
-  // Ở chế độ "Tải thêm" (load-more), tự động tải sẵn trang đầu tiên theo pageSize đã chọn
-  useEffect(() => {
-    if (
-      view === "load-more" &&
-      items.length === 0 &&
-      nextPage === 1 &&
-      !pending &&
-      !incrementalEnd &&
-      !incrementalError
-    ) {
-      loadNext();
-    }
-  }, [view, items.length, nextPage, pending, incrementalEnd, incrementalError, loadNext]);
-
-  useEffect(() => {
-    if (view !== "infinite" || incrementalEnd || !sentinelRef.current) return undefined;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) loadNext();
-      },
-      { rootMargin: "200px 0px" },
-    );
-    observer.observe(sentinelRef.current);
-    return () => observer.disconnect();
-  }, [incrementalEnd, items, loadNext, view]);
+  }, [pageRequest, paramsText, searchEpoch]);
 
   const changeUrl = (updates, clearKeys = []) => {
     const params = new URLSearchParams(searchParams);
+    params.delete("view");
+    params.set("mode", "advanced");
+    params.set("match", "fulltext");
     clearKeys.forEach((key) => params.delete(key));
     Object.entries(updates).forEach(([key, value]) => setOptional(params, key, String(value)));
     params.set("page", "1");
@@ -241,9 +104,11 @@ export default function AdminDishList() {
 
   const handleCategoryQuickFilter = (categoryValue) => {
     const params = new URLSearchParams(searchParams);
+    params.delete("view");
+    params.set("mode", "advanced");
+    params.set("match", "fulltext");
     const nextCat = categoryValue === activeCategory ? "" : categoryValue;
     if (nextCat) {
-      params.set("mode", "advanced");
       params.set("category", nextCat);
     } else {
       params.delete("category");
@@ -256,17 +121,15 @@ export default function AdminDishList() {
   const handleSubmit = (event) => {
     event.preventDefault();
     const params = new URLSearchParams(searchParams);
+    params.delete("view");
+    params.set("mode", "advanced");
+    params.set("match", "fulltext");
     params.delete("status");
-    params.set("mode", draft.mode);
     setOptional(params, "q", draft.q.trim());
     setOptional(params, "sort", draft.sort);
-    if (draft.mode === "advanced") {
-      ["category", "minPrice", "maxPrice", "available"].forEach((key) =>
-        setOptional(params, key, draft[key].trim()),
-      );
-    } else {
-      ["category", "minPrice", "maxPrice", "available"].forEach((key) => params.delete(key));
-    }
+    ["category", "minPrice", "maxPrice", "available"].forEach((key) =>
+      setOptional(params, key, draft[key].trim()),
+    );
     params.set("page", "1");
     setSearchParams(params);
     setSearchEpoch((epoch) => epoch + 1);
@@ -274,7 +137,6 @@ export default function AdminDishList() {
 
   const clearConditions = () => {
     setDraft({
-      mode: "basic",
       q: "",
       category: "",
       minPrice: "",
@@ -283,7 +145,9 @@ export default function AdminDishList() {
       sort: "id_asc",
     });
     const params = new URLSearchParams();
-    params.set("view", view);
+    params.delete("view");
+    params.set("mode", "advanced");
+    params.set("match", "fulltext");
     params.set("pageSize", pageSize);
     params.set("page", "1");
     setSearchParams(params);
@@ -291,9 +155,11 @@ export default function AdminDishList() {
   };
 
   const handlePageSize = (value) => changeUrl({ pageSize: value });
-  const handleView = (value) => changeUrl({ view: value });
   const handlePage = (value) => {
     const params = new URLSearchParams(searchParams);
+    params.delete("view");
+    params.set("mode", "advanced");
+    params.set("match", "fulltext");
     params.set("page", String(value));
     setSearchParams(params);
   };
@@ -310,9 +176,8 @@ export default function AdminDishList() {
     },
   );
   const visiblePages = [...new Set([...(pageCount > 5 ? [1] : []), ...pageWindow, ...(pageCount > 5 ? [pageCount] : [])])];
-  const shownDishes = view === "pages" ? pageData?.items || [] : items;
-  const resultTotal = view === "pages" ? pageData?.total : incrementalTotal;
-  const advanced = draft.mode === "advanced";
+  const shownDishes = pageData?.items || [];
+  const resultTotal = pageData?.total;
 
   return (
     <section className="section" style={{ paddingTop: "120px" }}>
@@ -332,28 +197,8 @@ export default function AdminDishList() {
         </div>
 
         <div className="dish-search-panel">
-          {/* 1. Khung chuyển đổi 3 chế độ phân trang được đẩy lên trên cùng */}
+          {/* Tổng kết quả tìm kiếm */}
           <div className="dish-results-toolbar">
-            <div className="dish-view-group">
-              <span className="dish-view-label">Chế độ hiển thị:</span>
-              <div className="dish-view-switch" role="group" aria-label="Kiểu hiển thị phân trang">
-                {[
-                  ["pages", "Số trang"],
-                  ["load-more", "Tải thêm"],
-                  ["infinite", "Cuộn vô hạn"],
-                ].map(([value, label]) => (
-                  <button
-                    key={value}
-                    type="button"
-                    aria-pressed={view === value}
-                    className={view === value ? "is-active" : ""}
-                    onClick={() => handleView(value)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
             {resultTotal !== null && resultTotal !== undefined && (
               <span className="dish-results-count">
                 {resultTotal.toLocaleString("vi-VN")} món phù hợp
@@ -385,23 +230,7 @@ export default function AdminDishList() {
 
           {/* 3. Form tìm kiếm và lọc chi tiết giống trang khách hàng */}
           <form className="dish-search-form" onSubmit={handleSubmit}>
-            <div className="dish-search-primary-fields">
-              <div className="dish-form-field">
-                <label htmlFor="admin-dish-search-mode">Kiểu tìm kiếm</label>
-                <select
-                  id="admin-dish-search-mode"
-                  value={draft.mode}
-                  onChange={(event) =>
-                    setDraft((current) => ({ ...current, mode: event.target.value }))
-                  }
-                >
-                  <option value="basic">Cơ bản</option>
-                  <option value="advanced">Nâng cao</option>
-                  <option value="fulltext">Toàn văn</option>
-                  <option value="fuzzy">Gần đúng (fuzzy)</option>
-                </select>
-              </div>
-
+            <div className="dish-search-primary-fields dish-search-primary-fields--fixed">
               <div className="dish-form-field dish-form-field--query">
                 <label htmlFor="admin-dish-search-query">Từ khóa</label>
                 <input
@@ -411,11 +240,7 @@ export default function AdminDishList() {
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, q: event.target.value }))
                   }
-                  placeholder={
-                    draft.mode === "fulltext"
-                      ? "Tên món hoặc từ trong mô tả"
-                      : "Tìm theo tên món (ví dụ: Phở, Bún chả...)"
-                  }
+                  placeholder="Tên món, mô tả hoặc nguyên liệu..."
                 />
               </div>
 
@@ -424,7 +249,7 @@ export default function AdminDishList() {
                 <select
                   id="admin-dish-search-sort"
                   value={draft.sort}
-                  disabled={draft.mode === "fulltext" || draft.mode === "fuzzy"}
+                  disabled={Boolean(draft.q.trim())}
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, sort: event.target.value }))
                   }
@@ -453,25 +278,8 @@ export default function AdminDishList() {
               </div>
             </div>
 
-            {advanced && (
+            {(
               <div className="dish-search-advanced-fields">
-                <div className="dish-form-field">
-                  <label htmlFor="admin-dish-search-category">Danh mục</label>
-                  <select
-                    id="admin-dish-search-category"
-                    value={draft.category}
-                    onChange={(event) =>
-                      setDraft((current) => ({ ...current, category: event.target.value }))
-                    }
-                  >
-                    <option value="">Tất cả</option>
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
-                </div>
                 <div className="dish-form-field">
                   <label htmlFor="admin-dish-min-price">Giá từ</label>
                   <input
@@ -514,12 +322,6 @@ export default function AdminDishList() {
             )}
 
             <div className="dish-search-footer">
-              <div className="dish-search-help-row" aria-live="polite">
-                <p>{searchModeDescriptions[draft.mode]}</p>
-                {(draft.mode === "fulltext" || draft.mode === "fuzzy") && (
-                  <p><strong>Xếp theo độ phù hợp.</strong></p>
-                )}
-              </div>
               <div className="dish-search-actions">
                 <button className="btn btn--primary" type="submit">
                   <Search className="ui-icon" aria-hidden="true" /> Tìm kiếm
@@ -532,29 +334,15 @@ export default function AdminDishList() {
           </form>
         </div>
 
-        {mode === "fuzzy" && (
-          <p className="dish-search-note">
-            Tìm gần đúng dùng độ tương đồng toàn tên món; ngưỡng là 0.3.
-          </p>
-        )}
-
         {/* Trạng thái Loading / Lỗi */}
-        {view === "pages" && pageLoading && <LoadingSpinner />}
-        {view === "pages" && !pageLoading && pageError && (
+        {pageLoading && (
+          <LoadingSkeleton variant="table" columns={9} rows={pageSizes.includes(Number(pageSize)) ? Number(pageSize) : 10} />
+        )}
+        {!pageLoading && pageError && (
           <ErrorAlert error={pageError} onRetry={retryPage} />
         )}
-        {view !== "pages" && incrementalError && (
-          <div className="dish-load-error" role="alert">
-            <span>{incrementalError.message || "Không thể tải danh sách món ăn."}</span>
-            <button type="button" className="btn btn--outline" onClick={loadNext}>
-              Thử lại
-            </button>
-          </div>
-        )}
-        {view !== "pages" && pending && items.length === 0 && <LoadingSpinner />}
-
         {/* Bảng quản trị món ăn */}
-        {(view !== "pages" ? !(pending && items.length === 0) : !pageLoading && !pageError) && (
+        {(!pageLoading && !pageError) && (
           <div className="admin-table-card admin-dish-table-card">
             <table className="data-table admin-dish-table">
               <thead>
@@ -725,9 +513,8 @@ export default function AdminDishList() {
             </table>
           </div>
         )}
-
         {/* Thanh phân trang theo Số trang (pages) */}
-        {view === "pages" && !pageLoading && !pageError && pageData && pageCount > 0 && (
+        {!pageLoading && !pageError && pageData && pageCount > 0 && (
           <nav className="dish-pagination" aria-label="Phân trang quản trị món ăn">
             <button
               type="button"
@@ -761,34 +548,6 @@ export default function AdminDishList() {
           </nav>
         )}
 
-        {/* Chế độ Tải thêm (load-more) */}
-        {view === "load-more" && (
-          <div className="dish-load-more">
-            {pending && <span>Đang tải...</span>}
-            {incrementalEnd && <span>Đã hết món</span>}
-            {!incrementalEnd && (
-              <button type="button" className="btn btn--outline" onClick={loadNext} disabled={pending}>
-                {incrementalError ? "Thử lại" : "Tải thêm"}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Chế độ Cuộn vô hạn (infinite) */}
-        {view === "infinite" && (
-          <>
-            <div ref={sentinelRef} className="dish-scroll-sentinel" aria-hidden="true" />
-            <div className="dish-load-more">
-              {pending && <span>Đang tải...</span>}
-              {incrementalEnd && <span>Đã hết món</span>}
-              {!incrementalEnd && (
-                <button type="button" className="btn btn--outline" onClick={loadNext} disabled={pending}>
-                  {incrementalError ? "Thử lại" : "Tải thêm"}
-                </button>
-              )}
-            </div>
-          </>
-        )}
       </div>
     </section>
   );

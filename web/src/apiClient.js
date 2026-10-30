@@ -30,11 +30,13 @@ export async function apiRequest(endpoint, options = {}) {
 
   // --- TẦNG 2: Kiểm tra lỗi kỹ thuật HTTP Status (404 sai URL, 500 lỗi máy chủ) ---
   if (!response.ok) {
-    let errMessage = "Đã xảy ra sự cố. Vui lòng thử lại sau.";
-    try {
-      const errBody = await response.json();
-      if (errBody && errBody.message) errMessage = errBody.message;
-    } catch (_) {}
+    const errMessage = response.status === 404
+      ? "Không tìm thấy thông tin bạn yêu cầu."
+      : response.status === 401 || response.status === 403
+        ? "Bạn không có quyền thực hiện thao tác này."
+        : response.status === 429
+          ? "Vui lòng đợi một lát rồi thử lại."
+          : "Không thể hoàn tất yêu cầu lúc này. Vui lòng thử lại sau.";
 
     throw {
       type: "HTTP_ERROR",
@@ -62,7 +64,7 @@ export async function apiRequest(endpoint, options = {}) {
       type: "BUSINESS_ERROR",
       isTechnical: false,
       code: payload.error?.code || "UNKNOWN_BUSINESS_ERROR",
-      message: payload.error?.message || "Đã xảy ra lỗi nghiệp vụ.",
+      message: payload.error?.message || "Không thể hoàn tất thao tác. Vui lòng thử lại.",
       fields: payload.error?.fields || {},
     };
   }
@@ -147,12 +149,15 @@ export const chefApi = {
 
 // ==================== CÁC HÀM TIỆN ÍCH CHO NGUYÊN LIỆU ====================
 export const ingredientApi = {
-  list: (params = {}) => {
+  list: (params = {}, signal) => {
     const query = new URLSearchParams();
     if (params.q) query.set("q", params.q);
     if (params.category) query.set("category", params.category);
+    if (params.unit) query.set("unit", params.unit);
+    if (params.mode) query.set("mode", params.mode);
+    if (params.match) query.set("match", params.match);
     const qs = query.toString() ? `?${query.toString()}` : "";
-    return apiRequest(`/ingredients${qs}`);
+    return apiRequest(`/ingredients${qs}`, { signal });
   },
   getById: (id) => apiRequest(`/ingredients/${id}`),
   create: (data) =>

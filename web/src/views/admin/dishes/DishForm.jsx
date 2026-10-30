@@ -2,7 +2,7 @@ import { Check, CircleAlert, Plus, RotateCcw, Save, Search, X } from "lucide-rea
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { dishApi, chefApi, ingredientApi } from "../../../apiClient";
-import { LoadingSpinner, NotFoundCard } from "../../../components/StateViews";
+import { ErrorAlert, LoadingSkeleton, NotFoundCard } from "../../../components/StateViews";
 import ChefSelect from "../../../components/ChefSelect";
 import {
   INGREDIENT_TAGS,
@@ -44,6 +44,45 @@ export default function DishForm({ isEdit = false }) {
   const [ingPopupOpen, setIngPopupOpen] = useState(false);
   const [ingSearch, setIngSearch] = useState("");
   const [selectedIngTag, setSelectedIngTag] = useState("Tất cả");
+  const [ingUnit, setIngUnit] = useState("");
+  const [ingResults, setIngResults] = useState(null);
+  const [ingSearchLoading, setIngSearchLoading] = useState(false);
+  const [ingSearchError, setIngSearchError] = useState(null);
+  const [ingSearchAttempt, setIngSearchAttempt] = useState(0);
+
+  useEffect(() =>
+  {
+    if (!ingPopupOpen) return undefined;
+    const controller = new AbortController();
+    setIngSearchLoading(true);
+    setIngSearchError(null);
+    const timer = setTimeout(() =>
+    {
+      ingredientApi.list({
+        mode: "advanced",
+        match: "fuzzy",
+        q: ingSearch.trim(),
+        category: selectedIngTag,
+        unit: ingUnit.trim(),
+      }, controller.signal).then((data) =>
+      {
+        if (controller.signal.aborted) return;
+        setIngResults(data);
+        setIngredients((current) => [...new Map([...current, ...data].map((item) => [item.id, item])).values()]);
+      }).catch((error) =>
+      {
+        if (!controller.signal.aborted && error.name !== "AbortError") setIngSearchError(error);
+      }).finally(() =>
+      {
+        if (!controller.signal.aborted) setIngSearchLoading(false);
+      });
+    }, 250);
+    return () =>
+    {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [ingPopupOpen, ingSearch, selectedIngTag, ingUnit, ingSearchAttempt]);
 
   useEffect(() =>
   {
@@ -218,22 +257,9 @@ export default function DishForm({ isEdit = false }) {
     ).length;
   };
 
-  const filteredAvailableIngredients = unselectedIngredients.filter((ing) => {
-    const ingCat = getIngredientCategory(ing);
-    const matchesTag =
-      selectedIngTag === "Tất cả"
-        ? true
-        : ingCat.toLowerCase() === selectedIngTag.toLowerCase();
-
-    const q = ingSearch.trim().toLowerCase();
-    const matchesSearch =
-      !q ||
-      (ing.name && ing.name.toLowerCase().includes(q)) ||
-      (ing.unit && ing.unit.toLowerCase().includes(q)) ||
-      ingCat.toLowerCase().includes(q);
-
-    return matchesTag && matchesSearch;
-  });
+  const filteredAvailableIngredients = (ingResults || ingredients).filter(
+    (ing) => !formData.ingredientIds.includes(ing.id),
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -287,7 +313,7 @@ export default function DishForm({ isEdit = false }) {
     return (
       <section className="section" style={{ paddingTop: "140px" }}>
         <div className="container">
-          <LoadingSpinner />
+          <LoadingSkeleton variant="form" />
         </div>
       </section>
     );
@@ -560,6 +586,10 @@ export default function DishForm({ isEdit = false }) {
                   role="dialog"
                   aria-modal="true"
                   aria-labelledby="ingredient-modal-title"
+                  onKeyDown={(event) =>
+                  {
+                    if (event.key === "Enter" && event.target.tagName === "INPUT") event.preventDefault();
+                  }}
                   onClick={(e) => {
                     if (e.target === e.currentTarget) setIngPopupOpen(false);
                   }}
@@ -593,7 +623,7 @@ export default function DishForm({ isEdit = false }) {
                           type="text"
                           value={ingSearch}
                           onChange={(e) => setIngSearch(e.target.value)}
-                          placeholder="Tìm nhanh nguyên liệu theo tên, đơn vị tính..."
+                          placeholder="Nhập tên nguyên liệu..."
                           aria-label="Tìm nhanh nguyên liệu"
                           className="ingredient-search-input"
                         />
@@ -608,6 +638,16 @@ export default function DishForm({ isEdit = false }) {
                             <X className="ui-icon" aria-hidden="true" />
                           </button>
                         )}
+                      </div>
+
+                      <div className="dish-form-field">
+                        <label htmlFor="ingredient-search-unit">Đơn vị tính</label>
+                        <input
+                          id="ingredient-search-unit"
+                          value={ingUnit}
+                          onChange={(event) => setIngUnit(event.target.value)}
+                          placeholder="Ví dụ: kg, gam, bó"
+                        />
                       </div>
 
                       <div className="ingredient-tags-container">
@@ -630,7 +670,11 @@ export default function DishForm({ isEdit = false }) {
                     </div>
 
                     <div className="ingredient-modal-body">
-                      {filteredAvailableIngredients.length > 0 ? (
+                      {ingSearchLoading ? (
+                        <LoadingSkeleton variant="table" columns={3} rows={4} message="Đang tìm nguyên liệu…" />
+                      ) : ingSearchError ? (
+                        <ErrorAlert error={ingSearchError} onRetry={() => setIngSearchAttempt((attempt) => attempt + 1)} />
+                      ) : filteredAvailableIngredients.length > 0 ? (
                         <div className="ingredient-popup-grid">
                           {filteredAvailableIngredients.map((ing) => {
                             const ingCategory = getIngredientCategory(ing);
@@ -667,12 +711,13 @@ export default function DishForm({ isEdit = false }) {
                           ) : (
                             <>
                               <p>Không có nguyên liệu nào phù hợp với bộ lọc hiện tại.</p>
-                              {(ingSearch || selectedIngTag !== "Tất cả") && (
+                              {(ingSearch || ingUnit || selectedIngTag !== "Tất cả") && (
                                 <button
                                   type="button"
                                   className="btn btn--outline"
                                   onClick={() => {
                                     setIngSearch("");
+                                    setIngUnit("");
                                     setSelectedIngTag("Tất cả");
                                   }}
                                 >
@@ -722,14 +767,14 @@ export default function DishForm({ isEdit = false }) {
             {/* Đường dẫn hình ảnh */}
             <div className="form-group">
               <label htmlFor="imageUrl" className="form-label">
-                Đường Dẫn Hình Ảnh (URL hoặc /assets/img/dishes/...):
+                Liên kết ảnh món ăn:
               </label>
               <input
                 type="text"
                 id="imageUrl"
                 name="imageUrl"
                 className="form-control"
-                placeholder="Ví dụ: /assets/img/dishes/pho-bo.jpg hoặc https://..."
+                placeholder="Dán liên kết ảnh món ăn..."
                 value={formData.imageUrl}
                 onChange={handleChange}
               />
@@ -765,7 +810,7 @@ export default function DishForm({ isEdit = false }) {
                   style={{ width: "18px", height: "18px", accentColor: "var(--burgundy)" }}
                 />
                 <span style={{ fontSize: "0.95rem", color: "var(--charcoal)", fontWeight: 500 }}>
-                  Món ăn đang sẵn sàng phục vụ thực khách (Available)
+                  Món ăn đang sẵn sàng phục vụ thực khách
                 </span>
               </label>
             </div>

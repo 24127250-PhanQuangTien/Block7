@@ -64,7 +64,7 @@ async function main() {
     ["mode=abc", { mode: "abc" }],
     ["unsupported category", { mode: "advanced", category: "Not a category" }],
     ["unsupported sort", { sort: "newest" }],
-    ["empty available", { mode: "advanced", available: "" }],
+    ["unsupported match", { mode: "advanced", match: "unknown" }],
     ["empty full-text query", { mode: "fulltext", q: "" }],
     ["empty fuzzy query", { mode: "fuzzy", q: "" }],
     ["invalid legacy status", { status: "unknown" }],
@@ -91,6 +91,7 @@ async function main() {
   });
 
   const unavailable = await getAll({ mode: "advanced", available: "false" });
+  const emptyAvailable = await getAll({ mode: "advanced", available: "" });
   const zeroPrice = await getAll({ mode: "advanced", minPrice: "0", maxPrice: "0" });
   const andFilters = await getAll({
     mode: "advanced",
@@ -104,6 +105,7 @@ async function main() {
   const legacyUnavailable = await getAll({ status: "unavailable" });
   const legacyCategory = await getAll({ category: "Món Nước" });
   check("advanced filters preserve false, zero, and AND semantics", () => {
+    assert.equal(emptyAvailable.total, all.total);
     assert.ok(unavailable.items.length > 0);
     assert.ok(unavailable.items.every((dish) => dish.available === false));
     assert.ok(zeroPrice.items.length > 0);
@@ -151,7 +153,7 @@ async function main() {
   });
 
   const fuzzy = await getAll({ mode: "fuzzy", q: "Pho Bo Hu" });
-  check("fuzzy results use whole-name similarity at threshold 0.3", () => {
+  check("fuzzy results use accent-insensitive name/word similarity at threshold 0.3", () => {
     assert.equal(fuzzy.items[0].name, "Pho Bo Hue");
     assert.ok(fuzzy.items.every((dish) => dish.searchScore >= 0.3));
     for (let index = 1; index < fuzzy.items.length; index += 1) {

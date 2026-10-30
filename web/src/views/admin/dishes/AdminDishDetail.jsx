@@ -2,7 +2,7 @@ import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { dishApi } from "../../../apiClient";
-import { LoadingSpinner, ErrorAlert, NotFoundCard } from "../../../components/StateViews";
+import { LoadingSkeleton, ErrorAlert, NotFoundCard } from "../../../components/StateViews";
 
 export default function AdminDishDetail() {
   const { id } = useParams();
@@ -37,7 +37,7 @@ export default function AdminDishDetail() {
     return (
       <section className="section" style={{ paddingTop: "140px" }}>
         <div className="container">
-          <LoadingSpinner />
+          <LoadingSkeleton variant="detail" />
         </div>
       </section>
     );

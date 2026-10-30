@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const prisma = require("../prisma");
+const { Prisma } = require("@prisma/client");
+const { fuzzyScoreSql, FUZZY_SIMILARITY_THRESHOLD } = require("../search");
 const { parseValidId, validateIngredient } = require("../validation");
 
 // 1. GET /api/ingredients - Danh sách nguyên liệu (có tìm kiếm q và lọc category)
@@ -8,8 +10,52 @@ router.get("/", async (req, res, next) => {
   try {
     const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
     const category = typeof req.query.category === "string" ? req.query.category.trim() : "";
+    const unit = typeof req.query.unit === "string" ? req.query.unit.trim() : "";
+    const match = req.query.match || "literal";
+    const invalidFields = Object.keys(req.query).filter((key) =>
+      ["q", "category", "unit", "match", "mode"].includes(key) && typeof req.query[key] !== "string",
+    );
+    if (invalidFields.length || !["literal", "fuzzy"].includes(match) || (req.query.mode && req.query.mode !== "advanced"))
+    {
+      return res.status(200).json({
+        ok: false,
+        data: null,
+        error: { code: "VALIDATION_FAILED", message: "Điều kiện tìm kiếm nguyên liệu không hợp lệ." },
+      });
+    }
+
+    if (match === "fuzzy")
+    {
+      const score = fuzzyScoreSql(Prisma.sql`i.name`, q);
+      const predicates = [];
+      if (q)
+      {
+        predicates.push(Prisma.sql`${score} >= ${FUZZY_SIMILARITY_THRESHOLD}`);
+      }
+      if (category && !["tất cả", "all"].includes(category.toLowerCase()))
+      {
+        predicates.push(Prisma.sql`lower(coalesce(i.category, 'Khác')) = lower(${category})`);
+      }
+      if (unit)
+      {
+        predicates.push(Prisma.sql`lower(i.unit) = lower(${unit})`);
+      }
+      const where = predicates.length ? Prisma.sql`WHERE ${Prisma.join(predicates, " AND ")}` : Prisma.empty;
+      const order = q ? Prisma.sql`${score} DESC, i.id ASC` : Prisma.sql`i.id ASC`;
+      const selected = await prisma.$queryRaw(Prisma.sql`SELECT i.id FROM ingredients i ${where} ORDER BY ${order}`);
+      const rows = selected.length ? await prisma.ingredient.findMany({
+        where: { id: { in: selected.map((item) => item.id) } },
+        include: { _count: { select: { dishes: true } } },
+      }) : [];
+      const byId = new Map(rows.map((item) => [item.id, item]));
+      return res.status(200).json({ ok: true, data: selected.map((item) => byId.get(item.id)) });
+    }
 
     const conditions = [];
+    if (unit)
+    {
+      conditions.push({ unit: { equals: unit, mode: "insensitive" } });
+    }
 
     if (q) {
       conditions.push({

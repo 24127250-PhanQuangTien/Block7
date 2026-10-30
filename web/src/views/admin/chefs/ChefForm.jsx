@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { CircleAlert, Save, X } from "lucide-react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { chefApi } from "../../../apiClient";
-import { LoadingSpinner, NotFoundCard } from "../../../components/StateViews";
+import { LoadingSkeleton, NotFoundCard } from "../../../components/StateViews";
 
 export default function ChefForm({ isEdit = false }) {
   const { id } = useParams();
@@ -86,7 +86,7 @@ export default function ChefForm({ isEdit = false }) {
     return (
       <section className="section" style={{ paddingTop: "140px" }}>
         <div className="container">
-          <LoadingSpinner />
+          <LoadingSkeleton variant="form" />
         </div>
       </section>
     );

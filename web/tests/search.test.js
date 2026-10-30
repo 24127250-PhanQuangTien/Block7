@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { filterChefs, normalizeSearch } from "../src/utils/search.js";
+import { buildDishSearchParams, filterChefs, normalizeSearch } from "../src/utils/search.js";
 
 const chefs = [
   { id: 7, name: "Đặng Văn Đạt", specialty: "Hải sản và món nướng" },
@@ -13,6 +13,21 @@ test("Vietnamese search normalizes case, accents, đ and combining marks", () =>
   assert.equal(normalizeSearch("  ĐẦU BẾP PHỤ TRÁCH  "), "dau bep phu trach");
   assert.equal(normalizeSearch("ă â ê ô ơ ư đ ắ ễ ộ ự"), "a a e o o u d a e o u");
   assert.equal(normalizeSearch("Đặng".normalize("NFD")), "dang");
+});
+
+test("Dish search combines the fixed text rule with every advanced filter and keeps zero/false", () =>
+{
+  const params = new URLSearchParams("mode=basic&q=Pho&category=Món+Nước&minPrice=0&maxPrice=100000&available=false&page=3&pageSize=20");
+  for (const match of ["fuzzy", "fulltext"])
+  {
+    assert.deepEqual(buildDishSearchParams(params, match), {
+      mode: "advanced", match, q: "Pho", category: "Món Nước", minPrice: "0", maxPrice: "100000",
+      available: "false", page: "3", pageSize: "20", sort: "id_asc",
+    });
+  }
+  assert.equal(buildDishSearchParams(params, "fulltext", 1).page, 1);
+  assert.equal(buildDishSearchParams(new URLSearchParams("status=unavailable"), "fuzzy").available, "false");
+  assert.equal(buildDishSearchParams(new URLSearchParams("q=+&minPrice="), "fuzzy").q, undefined);
 });
 
 test("Chef search matches names and specialties without changing ids or data", () =>

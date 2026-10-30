@@ -2,7 +2,7 @@ import { ArrowLeft, Pencil, Trash2, TriangleAlert } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ingredientApi } from "../../../apiClient";
-import { LoadingSpinner, NotFoundCard, ErrorAlert } from "../../../components/StateViews";
+import { LoadingSkeleton, NotFoundCard, ErrorAlert } from "../../../components/StateViews";
 
 export default function IngredientDelete() {
   const { id } = useParams();
@@ -52,7 +52,7 @@ export default function IngredientDelete() {
     return (
       <section className="section" style={{ paddingTop: "140px" }}>
         <div className="container">
-          <LoadingSpinner />
+          <LoadingSkeleton variant="confirmation" />
         </div>
       </section>
     );

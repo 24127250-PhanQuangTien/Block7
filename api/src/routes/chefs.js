@@ -9,10 +9,7 @@ router.get("/", async (req, res, next) => {
     const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
     const where = q
       ? {
-          OR: [
-            { name: { contains: q, mode: "insensitive" } },
-            { specialty: { contains: q, mode: "insensitive" } },
-          ],
+          name: { contains: q.replace(/[\\%_]/g, "\\$&"), mode: "insensitive" },
         }
       : {};
 

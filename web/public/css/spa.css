@@ -56,27 +56,195 @@
   background-color: #FEF2F2 !important;
 }
 
-/* Spinner nạp dữ liệu */
-.spa-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-  gap: 16px;
-  color: var(--gold-dark);
+/* Skeleton cho bảng quản trị, biểu mẫu, chi tiết và xác nhận xóa. */
+.loading-skeleton
+{
+  margin-block: 24px;
 }
 
-@keyframes spa-spin {
-  to {
-    transform: rotate(360deg);
+.skeleton-panel
+{
+  display: grid;
+  gap: 28px;
+  padding: clamp(20px, 4vw, 40px);
+  border: 1px solid #E7E5E4;
+  border-radius: 12px;
+  background: var(--white);
+}
+
+.loading-skeleton--form,
+.loading-skeleton--confirmation
+{
+  max-width: 800px;
+  margin-inline: auto;
+}
+
+.loading-skeleton--detail .skeleton-panel
+{
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.skeleton-panel-content
+{
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  min-width: 0;
+}
+
+.skeleton-field
+{
+  display: grid;
+  gap: 8px;
+}
+
+.skeleton-input
+{
+  width: 100%;
+  height: 44px;
+}
+
+.skeleton-detail-image
+{
+  min-height: 320px;
+}
+
+.skeleton-actions
+{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.skeleton-button
+{
+  width: 130px;
+  height: 44px;
+}
+
+.skeleton-table-scroll
+{
+  overflow-x: auto;
+  border: 1px solid #E7E5E4;
+  border-radius: 12px;
+  background: var(--white);
+}
+
+.skeleton-table
+{
+  width: 100%;
+  min-width: 680px;
+  table-layout: fixed;
+}
+
+.skeleton-table td,
+.skeleton-table th
+{
+  height: 64px;
+}
+
+@media (max-width: 768px)
+{
+  .loading-skeleton--detail .skeleton-panel
+  {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
-.spa-loading-text {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--text-muted);
+/* Skeleton dùng lại bố cục thẻ món ăn trên desktop và mobile. */
+.dish-list-skeleton
+{
+  margin-block: 24px;
+}
+
+.skeleton-status-text
+{
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.menu-item--skeleton:hover
+{
+  transform: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+.menu-item--skeleton .menu-item__info
+{
+  min-width: 0;
+}
+
+.skeleton-block
+{
+  display: block;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #ece7df 25%, #f8f5ef 50%, #ece7df 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+
+.menu-item__image.skeleton-block
+{
+  background: linear-gradient(90deg, #ece7df 25%, #f8f5ef 50%, #ece7df 75%) !important;
+  background-size: 200% 100% !important;
+}
+
+.skeleton-title
+{
+  width: 60%;
+  height: 22px;
+}
+
+.skeleton-price
+{
+  width: 25%;
+  height: 20px;
+}
+
+.skeleton-line
+{
+  width: 90%;
+  height: 12px;
+  margin-top: 8px;
+}
+
+.skeleton-line--short
+{
+  width: 65%;
+}
+
+.skeleton-tag
+{
+  width: 35%;
+  max-width: 100px;
+  height: 24px;
+  border-radius: 12px;
+}
+
+@keyframes skeleton-shimmer
+{
+  from
+  {
+    background-position: 200% 0;
+  }
+  to
+  {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce)
+{
+  .skeleton-block
+  {
+    animation: none;
+  }
 }
 
 /* ==================== KHUNG ĐIỀU KHIỂN PHÂN TRANG, TÌM KIẾM & LỌC MÓN ĂN ==================== */
@@ -201,9 +369,14 @@
   gap: 14px;
 }
 
+.dish-search-primary-fields--fixed
+{
+  grid-template-columns: minmax(220px, 2fr) minmax(150px, 1fr) minmax(130px, 0.8fr);
+}
+
 .dish-search-advanced-fields {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   padding-top: 14px;
   border-top: 1px dashed #E7E5E4;
@@ -1371,13 +1544,6 @@ select.form-control,
   height: 24px;
 }
 
-.ui-icon--spinner
-{
-  width: 48px;
-  height: 48px;
-  animation: spa-spin 0.8s linear infinite;
-}
-
 .selection-check
 {
   margin-left: 8px;
@@ -1502,13 +1668,6 @@ select.form-control,
   }
 }
 
-@media (prefers-reduced-motion: reduce)
-{
-  .ui-icon--spinner
-  {
-    animation-duration: 2s;
-  }
-}
 
 
 /* ==================== ĐỒNG BỘ 1 DÒNG CHO DANH SÁCH MÓN ĂN & BẢNG QUẢN TRỊ ==================== */

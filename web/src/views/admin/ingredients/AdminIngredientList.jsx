@@ -1,8 +1,8 @@
 import { Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ingredientApi } from "../../../apiClient";
-import { LoadingSpinner, ErrorAlert } from "../../../components/StateViews";
+import { LoadingSkeleton, ErrorAlert } from "../../../components/StateViews";
 import {
   INGREDIENT_TAGS,
   getIngredientCategory,
@@ -13,33 +13,49 @@ export default function AdminIngredientList() {
   const [searchParams, setSearchParams] = useSearchParams();
   const qParam = searchParams.get("q") || "";
   const catParam = searchParams.get("category") || "Tất cả";
+  const unitParam = searchParams.get("unit") || "";
 
   const [ingredients, setIngredients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQ, setSearchQ] = useState(qParam);
+  const [searchUnit, setSearchUnit] = useState(unitParam);
 
-  const fetchIngredients = async () => {
+  const fetchIngredients = useCallback(async (signal) =>
+  {
     setLoading(true);
     setError(null);
     try {
-      const data = await ingredientApi.list({ q: qParam });
-      setIngredients(data);
+      const data = await ingredientApi.list({ mode: "advanced", match: "fuzzy", q: qParam, category: catParam, unit: unitParam }, signal);
+      if (!signal?.aborted) setIngredients(data);
     } catch (err) {
-      setError(err);
+      if (!signal?.aborted && err.name !== "AbortError") setError(err);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
-  };
+  }, [qParam, catParam, unitParam]);
 
   useEffect(() => {
+    const controller = new AbortController();
     setSearchQ(qParam);
-    fetchIngredients();
-  }, [qParam]);
+    setSearchUnit(unitParam);
+    fetchIngredients(controller.signal);
+    return () => controller.abort();
+  }, [qParam, unitParam, fetchIngredients]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     const newParams = new URLSearchParams(searchParams);
+    newParams.set("mode", "advanced");
+    newParams.set("match", "fuzzy");
+    if (searchUnit.trim())
+    {
+      newParams.set("unit", searchUnit.trim());
+    }
+    else
+    {
+      newParams.delete("unit");
+    }
     if (searchQ.trim()) {
       newParams.set("q", searchQ.trim());
     } else {
@@ -50,6 +66,7 @@ export default function AdminIngredientList() {
 
   const handleClearSearch = () => {
     setSearchQ("");
+    setSearchUnit("");
     setSearchParams(new URLSearchParams());
   };
 
@@ -63,17 +80,7 @@ export default function AdminIngredientList() {
     setSearchParams(newParams);
   };
 
-  const getTagCount = (tag) => {
-    if (tag === "Tất cả") return ingredients.length;
-    return ingredients.filter(
-      (item) => getIngredientCategory(item).toLowerCase() === tag.toLowerCase()
-    ).length;
-  };
-
-  const filteredIngredients = ingredients.filter((item) => {
-    if (!catParam || catParam === "Tất cả") return true;
-    return getIngredientCategory(item).toLowerCase() === catParam.toLowerCase();
-  });
+  const filteredIngredients = ingredients;
 
   return (
     <section className="section" style={{ paddingTop: "120px" }}>
@@ -105,7 +112,17 @@ export default function AdminIngredientList() {
                 name="q"
                 value={searchQ}
                 onChange={(e) => setSearchQ(e.target.value)}
-                placeholder="Tìm theo tên nguyên liệu hoặc đơn vị tính..."
+                placeholder="Nhập tên nguyên liệu ..."
+                className="admin-filter-input"
+              />
+            </div>
+            <div className="admin-filter-field">
+              <label className="admin-filter-label" htmlFor="filter-unit">Đơn vị tính</label>
+              <input
+                id="filter-unit"
+                value={searchUnit}
+                onChange={(event) => setSearchUnit(event.target.value)}
+                placeholder="Ví dụ: kg, gam, bó"
                 className="admin-filter-input"
               />
             </div>
@@ -113,7 +130,7 @@ export default function AdminIngredientList() {
               <button type="submit" className="admin-filter-btn btn--primary">
                 <Search className="ui-icon" aria-hidden="true" /> Tìm Kiếm
               </button>
-              {(qParam || (catParam && catParam !== "Tất cả")) && (
+              {(qParam || unitParam || (catParam && catParam !== "Tất cả")) && (
                 <button
                   type="button"
                   onClick={handleClearSearch}
@@ -149,7 +166,6 @@ export default function AdminIngredientList() {
             </span>
             <div className="ingredient-tags-container">
               {INGREDIENT_TAGS.map((tag) => {
-                const count = getTagCount(tag);
                 const isActive = catParam.toLowerCase() === tag.toLowerCase();
                 return (
                   <button
@@ -159,7 +175,6 @@ export default function AdminIngredientList() {
                     onClick={() => handleTagClick(tag)}
                   >
                     <span>{tag}</span>
-                    <span className="tag-count">{count}</span>
                   </button>
                 );
               })}
@@ -168,10 +183,10 @@ export default function AdminIngredientList() {
         </div>
 
         {/* Trạng thái Loading */}
-        {loading && <LoadingSpinner />}
+        {loading && <LoadingSkeleton variant="table" columns={8} />}
 
         {/* Trạng thái Lỗi */}
-        {!loading && error && <ErrorAlert error={error} onRetry={fetchIngredients} />}
+        {!loading && error && <ErrorAlert error={error} onRetry={() => fetchIngredients()} />}
 
         {/* Bảng dữ liệu nguyên liệu */}
         {!loading && !error && (
