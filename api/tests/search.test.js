@@ -5,7 +5,7 @@ const request = require("supertest");
 const app = require("../src/app");
 const prisma = require("../src/prisma");
 const { Prisma } = require("@prisma/client");
-const { fuzzyScoreSql, dishFuzzyScoreSql } = require("../src/search");
+const { fuzzyScoreSql, dishFuzzyScoreSql, FUZZY_SIMILARITY_THRESHOLD } = require("../src/search");
 
 test.after(async () =>
 {
@@ -30,9 +30,43 @@ test("Vietnamese fuzzy search ignores accents, case, decomposed marks and đ in 
   assert.ok(unrelated[0].score < 0.3);
 });
 
+test("Single-edit matching accepts all four edit types and rejects noise from short words", async () =>
+{
+  assert.equal(FUZZY_SIMILARITY_THRESHOLD, 0.3);
+  const cases = [
+    ["quay", "quay", 1],
+    ["quay", "qauy", 0.75],
+    ["quay", "quayy", 0.75],
+    ["duong", "dung", 0.75],
+    ["quay", "quai", 0.75],
+    ["ba", "banh", 0],
+    ["hoi", "hoe", 0],
+    ["heo", "hoe", 0],
+    ["ga", "ca", 0],
+    ["bo", "bo", 1],
+    ["quay", "qay", 0],
+    ["Úc", "ucx", 0],
+    ["quay", "qaayx", 0],
+    ["Thịt ba chỉ heo", "banh heo", 0],
+    ["Bánh hỏi heo quay", "banh qauy", 0.875],
+    ["Bánh hỏi heo quay", "banh heo", 1],
+    ["Bánh hỏi heo quay", "quay BANH", 1],
+    ["Thịt thăn bò Úc", "thit than bo uc", 1],
+    ["Bánh hỏi heo quay", "banh-missing", 0],
+    ["Bánh hỏi heo quay", "!!!", 0],
+  ];
+  const queries = cases.map(([name, query], index) => Prisma.sql`SELECT ${index}::int AS index, ${fuzzyScoreSql(name, query)} AS score`);
+  const results = await prisma.$queryRaw(Prisma.join(queries, " UNION ALL "));
+  for (const result of results)
+  {
+    const [name, query, expected] = cases[result.index];
+    assert.equal(result.score, expected, `${query} -> ${name}`);
+  }
+});
+
 test("Multi-word fuzzy queries require every term and reject unrelated or partial matches", async () =>
 {
-  for (const query of ["Banh quay", "QUAY BÁNH", "  banh   quay  ", "banhh quay"])
+  for (const query of ["Banh quay", "QUAY BÁNH", "  banh   quay  ", "banhh quay", "banh qauy"])
   {
     const rows = await prisma.$queryRaw(Prisma.sql`
       SELECT candidate.name, ${fuzzyScoreSql(Prisma.sql`candidate.name`, query)} AS score
@@ -41,6 +75,22 @@ test("Multi-word fuzzy queries require every term and reject unrelated or partia
     const matches = rows.filter((row) => row.score >= 0.3).map((row) => row.name);
     assert.deepEqual(matches, ["Bánh hỏi heo quay"], query);
   }
+});
+
+test("Misspelled roast queries work while banh heo excludes dishes linked only to pork belly", async () =>
+{
+  for (const q of ["banh qauy", "banh heo"])
+  {
+    const result = await request(app).get("/api/dishes").query({ mode: "advanced", match: "fuzzy", q, pageSize: "100" });
+    assert.equal(result.body.ok, true);
+    assert.ok(result.body.data.items.some((dish) => dish.name === "Bánh hỏi heo quay"));
+    assert.ok(result.body.data.items.every((dish) => dish.name !== "B7 Seed 0039 - Lẩu Nấm Thanh Vị"));
+    assert.equal(new Set(result.body.data.items.map((dish) => dish.id)).size, result.body.data.items.length);
+  }
+  const exact = await request(app).get("/api/dishes").query({ mode: "advanced", match: "fuzzy", q: "banh quay", pageSize: "100" });
+  assert.equal(exact.body.ok, true);
+  assert.ok(exact.body.data.items.every((item) => item.searchScore >= FUZZY_SIMILARITY_THRESHOLD));
+  assert.ok(exact.body.data.items.every((item, index, items) => !index || items[index - 1].searchScore >= item.searchScore));
 });
 
 test("Dish search for Banh quay excludes unrelated dishes and counts the same filtered set", async () =>
@@ -141,9 +191,11 @@ test("Empty text and boolean filters still allow browsing with zero price", asyn
 
 test("Ingredient fuzzy search tolerates a typo and intersects category and unit", async () =>
 {
-  const ingredient = await prisma.ingredient.findFirst({ where: { category: { not: null } }, orderBy: { id: "asc" } });
+  const ingredients = await prisma.ingredient.findMany({ where: { category: { not: null } }, orderBy: { id: "asc" } });
+  const ingredient = ingredients.find((item) => item.name.split(/\s+/u).some((word) => Array.from(word).length >= 4));
   assert.ok(ingredient);
-  const query = { mode: "advanced", match: "fuzzy", q: ingredient.name + "x", category: ingredient.category, unit: ingredient.unit };
+  const word = ingredient.name.split(/\s+/u).find((item) => Array.from(item).length >= 4);
+  const query = { mode: "advanced", match: "fuzzy", q: ingredient.name.replace(word, word + "x"), category: ingredient.category, unit: ingredient.unit };
   const result = await request(app).get("/api/ingredients").query(query);
   assert.equal(result.status, 200);
   assert.equal(result.body.ok, true);

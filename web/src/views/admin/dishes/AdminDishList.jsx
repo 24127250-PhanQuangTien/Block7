@@ -60,7 +60,7 @@ export default function AdminDishList() {
   }, [paramsText, appliedParams]);
 
   const requestParams = useCallback(
-    (requestPage) => buildDishSearchParams(new URLSearchParams(paramsText), "fulltext", requestPage),
+    (requestPage) => buildDishSearchParams(new URLSearchParams(paramsText), "fuzzy", requestPage),
     [paramsText],
   );
 
@@ -95,7 +95,7 @@ export default function AdminDishList() {
     const params = new URLSearchParams(searchParams);
     params.delete("view");
     params.set("mode", "advanced");
-    params.set("match", "fulltext");
+    params.set("match", "fuzzy");
     clearKeys.forEach((key) => params.delete(key));
     Object.entries(updates).forEach(([key, value]) => setOptional(params, key, String(value)));
     params.set("page", "1");
@@ -106,7 +106,7 @@ export default function AdminDishList() {
     const params = new URLSearchParams(searchParams);
     params.delete("view");
     params.set("mode", "advanced");
-    params.set("match", "fulltext");
+    params.set("match", "fuzzy");
     const nextCat = categoryValue === activeCategory ? "" : categoryValue;
     if (nextCat) {
       params.set("category", nextCat);
@@ -123,7 +123,7 @@ export default function AdminDishList() {
     const params = new URLSearchParams(searchParams);
     params.delete("view");
     params.set("mode", "advanced");
-    params.set("match", "fulltext");
+    params.set("match", "fuzzy");
     params.delete("status");
     setOptional(params, "q", draft.q.trim());
     setOptional(params, "sort", draft.sort);
@@ -147,7 +147,7 @@ export default function AdminDishList() {
     const params = new URLSearchParams();
     params.delete("view");
     params.set("mode", "advanced");
-    params.set("match", "fulltext");
+    params.set("match", "fuzzy");
     params.set("pageSize", pageSize);
     params.set("page", "1");
     setSearchParams(params);
@@ -159,7 +159,7 @@ export default function AdminDishList() {
     const params = new URLSearchParams(searchParams);
     params.delete("view");
     params.set("mode", "advanced");
-    params.set("match", "fulltext");
+    params.set("match", "fuzzy");
     params.set("page", String(value));
     setSearchParams(params);
   };
@@ -240,7 +240,7 @@ export default function AdminDishList() {
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, q: event.target.value }))
                   }
-                  placeholder="Tên món, mô tả hoặc nguyên liệu..."
+                  placeholder="Tìm món ăn hoặc nguyên liệu..."
                 />
               </div>
 

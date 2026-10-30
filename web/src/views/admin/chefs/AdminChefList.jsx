@@ -1,7 +1,8 @@
 import { Pencil, Plus, Search, Trash2, X } from "lucide-react";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { chefApi } from "../../../apiClient";
+import { filterChefNames } from "../../../utils/search";
 import { LoadingSkeleton, ErrorAlert } from "../../../components/StateViews";
 
 export default function AdminChefList() {
@@ -13,23 +14,32 @@ export default function AdminChefList() {
   const [error, setError] = useState(null);
   const [searchQ, setSearchQ] = useState(qParam);
 
-  const fetchChefs = async () => {
+  const fetchChefs = useCallback(async (signal) =>
+  {
     setLoading(true);
     setError(null);
     try {
-      const data = await chefApi.list({ q: qParam });
-      setChefs(data);
+      const data = await chefApi.list({}, signal);
+      if (!signal?.aborted) setChefs(data);
     } catch (err) {
-      setError(err);
+      if (!signal?.aborted && err.name !== "AbortError") setError(err);
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() =>
+  {
+    const controller = new AbortController();
+    fetchChefs(controller.signal);
+    return () => controller.abort();
+  }, [fetchChefs]);
 
   useEffect(() => {
     setSearchQ(qParam);
-    fetchChefs();
   }, [qParam]);
+
+  const filteredChefs = filterChefNames(chefs, qParam);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -98,7 +108,7 @@ export default function AdminChefList() {
         {loading && <LoadingSkeleton variant="table" />}
 
         {/* Trạng thái Lỗi */}
-        {!loading && error && <ErrorAlert error={error} onRetry={fetchChefs} />}
+        {!loading && error && <ErrorAlert error={error} onRetry={() => fetchChefs()} />}
 
         {/* Bảng dữ liệu đầu bếp */}
         {!loading && !error && (
@@ -115,7 +125,7 @@ export default function AdminChefList() {
                   </tr>
                 </thead>
                 <tbody>
-                  {chefs.length === 0 ? (
+                  {filteredChefs.length === 0 ? (
                     <tr>
                       <td colSpan="5" style={{ textAlign: "center", padding: "40px" }}>
                         Chưa có thông tin đầu bếp nào phù hợp với tìm kiếm.
@@ -133,7 +143,7 @@ export default function AdminChefList() {
                       </td>
                     </tr>
                   ) : (
-                    chefs.map((chef) => (
+                    filteredChefs.map((chef) => (
                       <tr key={chef.id}>
                         <td>
                           <strong>#{chef.id}</strong>

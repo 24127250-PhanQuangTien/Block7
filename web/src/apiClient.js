@@ -124,11 +124,11 @@ export const dishApi = {
 
 // ==================== CÁC HÀM TIỆN ÍCH CHO ĐẦU BẾP ====================
 export const chefApi = {
-  list: (params = {}) => {
+  list: (params = {}, signal) => {
     const query = new URLSearchParams();
     if (params.q) query.set("q", params.q);
     const qs = query.toString() ? `?${query.toString()}` : "";
-    return apiRequest(`/chefs${qs}`);
+    return apiRequest(`/chefs${qs}`, { signal });
   },
   getById: (id) => apiRequest(`/chefs/${id}`),
   create: (data) =>

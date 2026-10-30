@@ -152,8 +152,8 @@ async function main() {
     }
   });
 
-  const fuzzy = await getAll({ mode: "fuzzy", q: "Pho Bo Hu" });
-  check("fuzzy results use accent-insensitive name/word similarity at threshold 0.3", () => {
+  const fuzzy = await getAll({ mode: "fuzzy", q: "Pho Bo Huee" });
+  check("fuzzy results require exact short words and at most one edit in longer words", () => {
     assert.equal(fuzzy.items[0].name, "Pho Bo Hue");
     assert.ok(fuzzy.items.every((dish) => dish.searchScore >= 0.3));
     for (let index = 1; index < fuzzy.items.length; index += 1) {

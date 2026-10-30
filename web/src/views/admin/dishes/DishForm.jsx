@@ -2,8 +2,9 @@ import { Check, CircleAlert, Plus, RotateCcw, Save, Search, X } from "lucide-rea
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { dishApi, chefApi, ingredientApi } from "../../../apiClient";
-import { ErrorAlert, LoadingSkeleton, NotFoundCard } from "../../../components/StateViews";
+import { LoadingSkeleton, NotFoundCard } from "../../../components/StateViews";
 import ChefSelect from "../../../components/ChefSelect";
+import { filterIngredientNames } from "../../../utils/search";
 import {
   INGREDIENT_TAGS,
   getIngredientCategory,
@@ -45,45 +46,6 @@ export default function DishForm({ isEdit = false }) {
   const [ingSearch, setIngSearch] = useState("");
   const [selectedIngTag, setSelectedIngTag] = useState("Tất cả");
   const [ingUnit, setIngUnit] = useState("");
-  const [ingResults, setIngResults] = useState(null);
-  const [ingSearchLoading, setIngSearchLoading] = useState(false);
-  const [ingSearchError, setIngSearchError] = useState(null);
-  const [ingSearchAttempt, setIngSearchAttempt] = useState(0);
-
-  useEffect(() =>
-  {
-    if (!ingPopupOpen) return undefined;
-    const controller = new AbortController();
-    setIngSearchLoading(true);
-    setIngSearchError(null);
-    const timer = setTimeout(() =>
-    {
-      ingredientApi.list({
-        mode: "advanced",
-        match: "fuzzy",
-        q: ingSearch.trim(),
-        category: selectedIngTag,
-        unit: ingUnit.trim(),
-      }, controller.signal).then((data) =>
-      {
-        if (controller.signal.aborted) return;
-        setIngResults(data);
-        setIngredients((current) => [...new Map([...current, ...data].map((item) => [item.id, item])).values()]);
-      }).catch((error) =>
-      {
-        if (!controller.signal.aborted && error.name !== "AbortError") setIngSearchError(error);
-      }).finally(() =>
-      {
-        if (!controller.signal.aborted) setIngSearchLoading(false);
-      });
-    }, 250);
-    return () =>
-    {
-      clearTimeout(timer);
-      controller.abort();
-    };
-  }, [ingPopupOpen, ingSearch, selectedIngTag, ingUnit, ingSearchAttempt]);
-
   useEffect(() =>
   {
     let cancelled = false;
@@ -257,9 +219,11 @@ export default function DishForm({ isEdit = false }) {
     ).length;
   };
 
-  const filteredAvailableIngredients = (ingResults || ingredients).filter(
-    (ing) => !formData.ingredientIds.includes(ing.id),
-  );
+  const filteredAvailableIngredients = filterIngredientNames(unselectedIngredients, {
+    q: ingSearch,
+    category: selectedIngTag,
+    unit: ingUnit,
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -670,11 +634,7 @@ export default function DishForm({ isEdit = false }) {
                     </div>
 
                     <div className="ingredient-modal-body">
-                      {ingSearchLoading ? (
-                        <LoadingSkeleton variant="table" columns={3} rows={4} message="Đang tìm nguyên liệu…" />
-                      ) : ingSearchError ? (
-                        <ErrorAlert error={ingSearchError} onRetry={() => setIngSearchAttempt((attempt) => attempt + 1)} />
-                      ) : filteredAvailableIngredients.length > 0 ? (
+                      {filteredAvailableIngredients.length > 0 ? (
                         <div className="ingredient-popup-grid">
                           {filteredAvailableIngredients.map((ing) => {
                             const ingCategory = getIngredientCategory(ing);

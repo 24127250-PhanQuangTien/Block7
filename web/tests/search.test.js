@@ -1,12 +1,37 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildDishSearchParams, filterChefs, normalizeSearch } from "../src/utils/search.js";
+import { buildDishSearchParams, filterChefNames, filterChefs, filterIngredientNames, normalizeSearch } from "../src/utils/search.js";
 
 const chefs = [
   { id: 7, name: "Đặng Văn Đạt", specialty: "Hải sản và món nướng" },
   { id: 42, name: "Nguyễn Thị Ánh", specialty: "Ẩm thực Huế truyền thống" },
   { id: 99, name: "Trần Bình", specialty: null },
 ];
+
+test("Client chef search uses names, ignores Vietnamese accents and leaves source data intact", () =>
+{
+  assert.deepEqual(filterChefNames(chefs, "dang van dat"), [chefs[0]]);
+  assert.deepEqual(filterChefNames(chefs, "HẢI SẢN"), []);
+  assert.deepEqual(filterChefNames(chefs, ""), chefs);
+  assert.equal(chefs.length, 3);
+});
+
+test("Client ingredient search combines typo-tolerant names with category and unit filters", () =>
+{
+  const ingredients = [
+    { id: 3, name: "Thịt ba chỉ heo", category: "Thịt", unit: "kg" },
+    { id: 2, name: "Bánh hỏi heo quay", category: "Khác", unit: "gam" },
+    { id: 1, name: "Thịt thăn bò Úc", category: "Thịt", unit: "kg" },
+  ];
+  assert.deepEqual(filterIngredientNames(ingredients, { q: "thit than bo uc" }), [ingredients[2]]);
+  assert.deepEqual(filterIngredientNames(ingredients, { q: "banh qauy" }), [ingredients[1]]);
+  assert.deepEqual(filterIngredientNames(ingredients, { q: "banh heo" }), [ingredients[1]]);
+  assert.deepEqual(filterIngredientNames(ingredients, { q: "banh hoe" }), []);
+  assert.deepEqual(filterIngredientNames(ingredients, { q: "thit", category: "THIT", unit: "KG" }), [ingredients[2], ingredients[0]]);
+  assert.deepEqual(filterIngredientNames(ingredients, { q: "thit", unit: "gam" }), []);
+  assert.deepEqual(filterIngredientNames(ingredients, { q: "!!!" }), []);
+  assert.deepEqual(ingredients.map((item) => item.id), [3, 2, 1]);
+});
 
 test("Vietnamese search normalizes case, accents, đ and combining marks", () =>
 {

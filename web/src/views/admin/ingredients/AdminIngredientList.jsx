@@ -2,6 +2,7 @@ import { Pencil, Plus, Search, Tags, Trash2, X } from "lucide-react";
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ingredientApi } from "../../../apiClient";
+import { filterIngredientNames } from "../../../utils/search";
 import { LoadingSkeleton, ErrorAlert } from "../../../components/StateViews";
 import {
   INGREDIENT_TAGS,
@@ -26,28 +27,32 @@ export default function AdminIngredientList() {
     setLoading(true);
     setError(null);
     try {
-      const data = await ingredientApi.list({ mode: "advanced", match: "fuzzy", q: qParam, category: catParam, unit: unitParam }, signal);
+      const data = await ingredientApi.list({}, signal);
       if (!signal?.aborted) setIngredients(data);
     } catch (err) {
       if (!signal?.aborted && err.name !== "AbortError") setError(err);
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, [qParam, catParam, unitParam]);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
-    setSearchQ(qParam);
-    setSearchUnit(unitParam);
     fetchIngredients(controller.signal);
     return () => controller.abort();
-  }, [qParam, unitParam, fetchIngredients]);
+  }, [fetchIngredients]);
+
+  useEffect(() =>
+  {
+    setSearchQ(qParam);
+    setSearchUnit(unitParam);
+  }, [qParam, unitParam]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     const newParams = new URLSearchParams(searchParams);
-    newParams.set("mode", "advanced");
-    newParams.set("match", "fuzzy");
+    newParams.delete("mode");
+    newParams.delete("match");
     if (searchUnit.trim())
     {
       newParams.set("unit", searchUnit.trim());
@@ -80,7 +85,7 @@ export default function AdminIngredientList() {
     setSearchParams(newParams);
   };
 
-  const filteredIngredients = ingredients;
+  const filteredIngredients = filterIngredientNames(ingredients, { q: qParam, category: catParam, unit: unitParam });
 
   return (
     <section className="section" style={{ paddingTop: "120px" }}>
